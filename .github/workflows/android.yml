@@ -123,10 +123,17 @@ jobs:
           retention-days: 14
 
   smoke:
-    name: Emulator smoke test + screenshots
+    name: Emulator smoke test (API ${{ matrix.api }})
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # The app ships arm64-v8a only. x86_64 Google APIs images with
+        # ARM->x86 native-bridge translation: API 30 has it; 33's image does
+        # not (INSTALL_FAILED_NO_MATCHING_ABIS). 31 is tried for real blur.
+        api: [30, 31]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -143,12 +150,10 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # The app ships arm64-v8a only; x86_64 Google APIs images (API 30+)
-      # carry ARM->x86 native-bridge translation, so the APK installs and runs.
       - name: Run emulator + smoke script
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
           profile: pixel_6
@@ -162,6 +167,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-screenshots
+          name: smoke-screenshots-api${{ matrix.api }}
           path: screens/
           retention-days: 14
