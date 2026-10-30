@@ -41,6 +41,18 @@ adb shell input swipe 540 1700 540 900 400; shot 07-settings-scrolled 2
 
 adb shell am start -W -a android.intent.action.VIEW -d "minis://settings/backdrop" $PKG >/dev/null
 shot 08-backdrop-settings 4
+
+# Style B (warm white): switch, look at Chats + sidebar, then switch back to A.
+if tap text "Warm white"; then
+  shot 08b-backdrop-warm 2
+  adb shell input keyevent KEYCODE_BACK; sleep 2
+  tap desc "Chats" && shot 12-chats-warm 3
+  tap desc "Open sidebar" && shot 13-sidebar-warm 3
+  adb shell input keyevent KEYCODE_BACK; sleep 2
+  adb shell am start -W -a android.intent.action.VIEW -d "minis://settings/backdrop" $PKG >/dev/null; sleep 3
+  tap text "Dusk glass" || true
+  adb shell input keyevent KEYCODE_BACK; sleep 2
+fi
 tap desc "Chats" >/dev/null 2>&1 || true
 
 # Chinese UI pass (per-app locale, API 33+; ignored on older images).
