@@ -2,7 +2,7 @@
 # Emulator smoke test: install, launch, capture key screens of the glass UI.
 # Usage: smoke.sh <apk> <outdir>
 set -uo pipefail
-APK="$1"; OUT="$2"; PKG=com.dl1991.mibot
+APK="$1"; OUT="$2"; PKG=com.dl1991.mibot  # applicationId; activity classes stay in namespace com.openminis.app
 mkdir -p "$OUT"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 fail=0
@@ -10,7 +10,7 @@ fail=0
 shot() { sleep "${2:-3}"; adb exec-out screencap -p > "$OUT/$1.png"; echo "shot: $1 ($(stat -c%s "$OUT/$1.png") bytes)"; }
 alive() { adb shell pidof $PKG >/dev/null 2>&1; }
 tap() { python3 "$HERE/tap.py" "$@"; }
-launch() { adb shell am start -W -n $PKG/.MainActivity --ez glass_demo true > "$OUT/start-$1.txt"; }
+launch() { adb shell am start -W -n $PKG/com.openminis.app.MainActivity --ez glass_demo true > "$OUT/start-$1.txt"; }
 
 adb shell getprop ro.product.cpu.abilist | tee "$OUT/abilist.txt"
 adb logcat -c || true
