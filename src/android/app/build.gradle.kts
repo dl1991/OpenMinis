@@ -33,7 +33,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.openminis.app"
+        // Fork rebrand: own applicationId so Mibot installs alongside the official
+        // Minis (com.openminis.app). `namespace` stays com.openminis.app, so R /
+        // BuildConfig / class names are unchanged; anything that needs the
+        // installed package must use context.packageName or BuildConfig.APPLICATION_ID.
+        applicationId = "com.dl1991.mibot"
         minSdk = 26
         targetSdk = 35
         versionCode = 37
@@ -63,7 +67,9 @@ android {
         // prerelease flag and cut a tag at its first '-') see them as version
         // 0 and never offer them. UPDATE_CHANNEL is the channel a fresh
         // install starts on; the user can switch to beta in About.
-        buildConfigField("String", "RELEASE_REPO", "\"OpenMinis/OpenMinis\"")
+        // Fork: point in-app update at this fork, not upstream (an upstream APK
+        // has a different applicationId and would install as a separate app).
+        buildConfigField("String", "RELEASE_REPO", "\"dl1991/OpenMinis\"")
         buildConfigField("String", "UPDATE_CHANNEL", "\"stable\"")
 
         ndk {

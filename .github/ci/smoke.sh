@@ -2,7 +2,7 @@
 # Emulator smoke test: install, launch, capture key screens of the glass UI.
 # Usage: smoke.sh <apk> <outdir>
 set -uo pipefail
-APK="$1"; OUT="$2"; PKG=com.openminis.app
+APK="$1"; OUT="$2"; PKG=com.dl1991.mibot
 mkdir -p "$OUT"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 fail=0
