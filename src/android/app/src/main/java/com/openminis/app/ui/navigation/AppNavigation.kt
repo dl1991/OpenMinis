@@ -78,6 +78,7 @@ import com.openminis.app.sandbox.TerminalSession
 import com.openminis.app.ui.terminal.TerminalScreen
 import com.openminis.app.ui.onboarding.OnboardingModelSelectionScreen
 import kotlinx.coroutines.flow.first
+import com.openminis.app.ui.glass.navigateToGlassTab
 
 // T342: Material 3 motion easing curves. Compose-Material3 (1.3.x) ships
 // `MotionScheme` only in 1.4-alpha; mirror the spec values directly so we
@@ -643,8 +644,40 @@ fun AppNavigation(
             )
         }
 
+        // [fork/glass-ui] Top-level tab pages + backdrop settings.
+        composable(com.openminis.app.ui.glass.GlassRoutes.FEED) {
+            com.openminis.app.ui.glass.GlassTabShell(
+                current = com.openminis.app.ui.glass.GlassTab.FEED,
+                onSelect = { navController.navigateToGlassTab(it) },
+                scrollUnder = true,
+            ) { com.openminis.app.ui.glass.GlassFeedPage() }
+        }
+        composable(com.openminis.app.ui.glass.GlassRoutes.IDEAS) {
+            com.openminis.app.ui.glass.GlassTabShell(
+                current = com.openminis.app.ui.glass.GlassTab.IDEAS,
+                onSelect = { navController.navigateToGlassTab(it) },
+                scrollUnder = true,
+            ) { com.openminis.app.ui.glass.GlassIdeasPage() }
+        }
+        composable(com.openminis.app.ui.glass.GlassRoutes.BOTS) {
+            com.openminis.app.ui.glass.GlassTabShell(
+                current = com.openminis.app.ui.glass.GlassTab.BOTS,
+                onSelect = { navController.navigateToGlassTab(it) },
+                scrollUnder = true,
+            ) { com.openminis.app.ui.glass.GlassBotsPage() }
+        }
+        composable(com.openminis.app.ui.glass.GlassRoutes.BACKDROP) {
+            com.openminis.app.ui.glass.BackdropSettingsScreen(onBack = { navController.safePopBackStack() })
+        }
+
         composable(Routes.SETTINGS) {
+          val glassOn = com.openminis.app.ui.glass.glassEnabled()
+          val glassContext = LocalContext.current
+          GlassSettingsFrame(glassOn, navController) {
             SettingsScreen(
+                showBack = !glassOn,
+                onBackdropClick = { navController.safeNavigate(com.openminis.app.ui.glass.GlassRoutes.BACKDROP) },
+                onReportBugClick = { com.openminis.app.ui.glass.ForkBugReport.open(glassContext) },
                 onBack = { navController.safePopBackStack() },
                 onProvidersClick = { navController.safeNavigate(Routes.PROVIDER_LIST) },
                 onModelGroupsClick = { navController.safeNavigate(Routes.MODEL_GROUPS) },
@@ -671,6 +704,7 @@ fun AppNavigation(
                 onMountedFoldersClick = { navController.safeNavigate(Routes.MOUNTED_FOLDERS) },
                 onSharedFoldersClick = { navController.safeNavigate(Routes.SHARED_FOLDERS) },
             )
+          }
         }
 
         composable(Routes.BACKUP) { entry ->
@@ -1647,4 +1681,19 @@ fun AppNavigation(
             )
         }
     }
+}
+
+/** [fork/glass-ui] Settings is the last tab when the glass UI is on. */
+@Composable
+private fun GlassSettingsFrame(glass: Boolean, navController: NavHostController, content: @Composable () -> Unit) {
+    if (!glass) {
+        content()
+        return
+    }
+    com.openminis.app.ui.glass.GlassTabShell(
+        current = com.openminis.app.ui.glass.GlassTab.SETTINGS,
+        onSelect = { navController.navigateToGlassTab(it) },
+        scrollUnder = false,
+        showBackdrop = false,
+    ) { content() }
 }

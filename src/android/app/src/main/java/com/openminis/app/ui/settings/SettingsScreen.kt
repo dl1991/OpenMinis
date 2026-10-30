@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Feedback
+import androidx.compose.material.icons.outlined.Wallpaper
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.FolderShared
@@ -123,6 +124,11 @@ fun SettingsScreen(
     // About row below still has a TODO onClick in HEAD; future settings-bucket
     // work will wire this through.
     onAboutClick: () -> Unit = {},
+    // [fork/glass-ui] Tab mode hides the back arrow; the two rows below only
+    // appear when the fork wires them.
+    showBack: Boolean = true,
+    onBackdropClick: (() -> Unit)? = null,
+    onReportBugClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var showFeedbackSheet by remember { mutableStateOf(false) }
@@ -131,11 +137,13 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.settings_back),
-                        )
+                    if (showBack) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.settings_back),
+                            )
+                        }
                     }
                 },
             )
@@ -184,8 +192,32 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_section_appearance),
                     subtitle = stringResource(R.string.settings_appearance_subtitle),
                     onClick = onAppearanceClick,
-                    showDivider = false,
+                    showDivider = onBackdropClick != null,
                 )
+                if (onBackdropClick != null) {
+                    SettingsItem(
+                        icon = Icons.Outlined.Wallpaper,
+                        iconColor = Color(0xFF30B0C7),
+                        title = stringResource(R.string.glass_backdrop_title),
+                        subtitle = stringResource(R.string.glass_backdrop_subtitle),
+                        onClick = onBackdropClick,
+                        showDivider = false,
+                    )
+                }
+            }
+
+            // [fork/bug-report] One-tap bug report to the fork.
+            if (onReportBugClick != null) {
+                SettingsSection(title = stringResource(R.string.glass_section_feedback)) {
+                    SettingsItem(
+                        icon = Icons.Outlined.BugReport,
+                        iconColor = Color(0xFFFF3B30),
+                        title = stringResource(R.string.glass_report_bug),
+                        subtitle = stringResource(R.string.glass_report_bug_desc),
+                        onClick = onReportBugClick,
+                        showDivider = false,
+                    )
+                }
             }
 
             // -- Agent Runtime --

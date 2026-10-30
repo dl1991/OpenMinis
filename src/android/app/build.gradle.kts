@@ -440,6 +440,12 @@ dependencies {
     // Kotlinx Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
+    // [fork/glass-ui] Haze: frosted-glass blur for the sidebar and the floating
+    // tab bar (RenderEffect on API 31+, translucent fallback tint below).
+    // 1.6.x is the line built against Kotlin 2.1 / Compose 1.8, matching this
+    // project's Kotlin 2.1.0 toolchain.
+    implementation("dev.chrisbanes.haze:haze:1.6.10")
+
     // Coil (image loading)
     implementation("io.coil-kt:coil-compose:2.7.0")
 

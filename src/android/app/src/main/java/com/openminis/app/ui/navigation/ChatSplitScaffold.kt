@@ -41,6 +41,7 @@ import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationIt
 import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
+import com.openminis.app.ui.glass.navigateToGlassTab
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -909,6 +910,34 @@ fun ChatSplitScaffoldRoute(
     skillRepository: com.openminis.app.data.repository.SkillRepository?,
     mcpRepository: com.openminis.app.data.repository.MCPRepository?,
 ) {
+    // [fork/glass-ui] With the glass UI on, the pair sits inside the recent-list
+    // drawer and the list pane gets the floating tab bar. Off: exactly stock.
+    if (com.openminis.app.ui.glass.glassEnabled()) {
+        com.openminis.app.ui.glass.GlassDrawerHost(navController, chatRepository) { openDrawer ->
+            ChatSplitScaffoldRouteContent(
+                initialSessionId, navController, chatRepository, providerRepository,
+                memoryRepository, skillRepository, mcpRepository, openDrawer,
+            )
+        }
+    } else {
+        ChatSplitScaffoldRouteContent(
+            initialSessionId, navController, chatRepository, providerRepository,
+            memoryRepository, skillRepository, mcpRepository, null,
+        )
+    }
+}
+
+@Composable
+private fun ChatSplitScaffoldRouteContent(
+    initialSessionId: String?,
+    navController: androidx.navigation.NavHostController,
+    chatRepository: com.openminis.app.data.repository.ChatRepository,
+    providerRepository: com.openminis.app.data.repository.ProviderRepository,
+    memoryRepository: com.openminis.app.data.repository.MemoryRepository?,
+    skillRepository: com.openminis.app.data.repository.SkillRepository?,
+    mcpRepository: com.openminis.app.data.repository.MCPRepository?,
+    openDrawer: (() -> Unit)?,
+) {
     ChatSplitScaffold(
         initialSessionId = initialSessionId,
         onOpenSharedDraft = { draft ->
@@ -917,6 +946,7 @@ fun ChatSplitScaffoldRoute(
             }
         },
         listPane = { selectedSessionId, draftPlaceholderId, onSessionSelected ->
+          GlassListPaneFrame(openDrawer != null, navController) {
             com.openminis.app.ui.sessions.SessionListScreen(
                 chatRepository = chatRepository,
                 providerRepository = providerRepository,
@@ -942,7 +972,9 @@ fun ChatSplitScaffoldRoute(
                 // [T-android-draft-placeholder-row] Synthetic "New Chat" row,
                 // never persisted — see the listPane param docs.
                 draftPlaceholderId = draftPlaceholderId,
+                onOpenDrawer = openDrawer,
             )
+          }
         },
         detailPane = { sessionId, onBackInPane, onNewChatInPane, onMoveToInPane,
             onToggleSidebar, sidebarCollapsed ->
@@ -1009,4 +1041,22 @@ fun ChatSplitScaffoldRoute(
             )
         },
     )
+}
+
+/** [fork/glass-ui] Puts the list pane under the floating glass tab bar when enabled. */
+@Composable
+private fun GlassListPaneFrame(
+    glass: Boolean,
+    navController: androidx.navigation.NavHostController,
+    content: @Composable () -> Unit,
+) {
+    if (!glass) {
+        content()
+        return
+    }
+    com.openminis.app.ui.glass.GlassTabShell(
+        current = com.openminis.app.ui.glass.GlassTab.CHATS,
+        onSelect = { tab -> navController.navigateToGlassTab(tab) },
+        scrollUnder = false,
+    ) { content() }
 }

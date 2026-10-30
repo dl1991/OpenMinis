@@ -195,6 +195,8 @@ object DeepLinkHandler {
             }
             "appearance" -> DeepLinkAction.OpenSettingsScreen(Routes.APPEARANCE)
             "background" -> DeepLinkAction.OpenSettingsScreen(Routes.BACKGROUND)
+            // [fork/glass-ui] Backdrop & Glass settings.
+            "backdrop", "glass" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.ui.glass.GlassRoutes.BACKDROP)
             "about" -> DeepLinkAction.OpenSettingsScreen(Routes.ABOUT)
             "network" -> DeepLinkAction.OpenSettingsScreen(Routes.NETWORK)
             // [FEAT-261021-04] Same paths and aliases as iOS DeepLinkRouter.

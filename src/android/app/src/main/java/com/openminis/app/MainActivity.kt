@@ -159,6 +159,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // [fork/glass-ui] CI screenshot runs pass --ez glass_demo true to fill
+        // the sidebar with sample rows. Debug builds only.
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("glass_demo", false) == true) {
+            com.openminis.app.ui.glass.GlassDemo.enabled = true
+        }
+
         // Register the crash-share "Save to..." launcher BEFORE the
         // safe-mode early-return below — ActivityResultLauncher must be
         // registered before STARTED, and the safe-mode path needs it.
