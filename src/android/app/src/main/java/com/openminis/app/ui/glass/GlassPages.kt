@@ -69,6 +69,8 @@ private fun PageHeader(title: String, horizontal: Int = 20) {
 @Composable
 private fun cardColors() = CardDefaults.cardColors(
     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
+    // Translucent containers defeat contentColorFor(); set it explicitly.
+    contentColor = MaterialTheme.colorScheme.onSurface,
 )
 
 @Composable

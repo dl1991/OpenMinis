@@ -22,7 +22,7 @@
     <string name="glass_enable_desc">磨砂側邊欄與半透明首頁</string>
     <string name="glass_section_backdrop">背景</string>
     <string name="glass_mode_ambient">氛圍</string>
-    <string name="glass_mode_ambient_desc">隨時間與天氣緩慢變化的漸層，不會顯示天氣資訊。</string>
+    <string name="glass_mode_ambient_desc">隨時間與天氣變換色調、緩慢飄動的薄霧，不會顯示天氣資訊。</string>
     <string name="glass_mode_photo">照片</string>
     <string name="glass_mode_photo_desc">使用相簿中的圖片</string>
     <string name="glass_mode_plain">純色</string>
