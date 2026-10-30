@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 /** What is painted behind the glass surfaces. */
 enum class BackdropMode { AMBIENT, PHOTO, PLAIN }
 
+/** Visual direction of the glass UI: A = dark dusk glass (default), B = warm-white minimal. */
+enum class GlassStyle { DUSK, WARM }
+
 data class GlassSettings(
     /** Master switch: off restores the stock layout exactly. */
     val enabled: Boolean = true,
@@ -17,6 +20,7 @@ data class GlassSettings(
     val photoPath: String? = null,
     /** 0..1, how strongly the backdrop is dimmed behind ordinary screens. */
     val dim: Float = 0.55f,
+    val style: GlassStyle = GlassStyle.DUSK,
 )
 
 /**
@@ -30,6 +34,7 @@ object GlassPrefs {
     private const val K_MODE = "backdrop_mode"
     private const val K_PHOTO = "photo_path"
     private const val K_DIM = "dim"
+    private const val K_STYLE = "style"
 
     private val state = MutableStateFlow(GlassSettings())
     @Volatile private var loaded = false
@@ -47,6 +52,8 @@ object GlassPrefs {
                         .getOrDefault(BackdropMode.AMBIENT),
                     photoPath = p.getString(K_PHOTO, null)?.takeIf { java.io.File(it).exists() },
                     dim = p.getFloat(K_DIM, 0.55f).coerceIn(0f, 0.9f),
+                    style = runCatching { GlassStyle.valueOf(p.getString(K_STYLE, null) ?: "") }
+                        .getOrDefault(GlassStyle.DUSK),
                 )
                 loaded = true
             }
@@ -63,6 +70,7 @@ object GlassPrefs {
             .putString(K_MODE, next.mode.name)
             .putString(K_PHOTO, next.photoPath)
             .putFloat(K_DIM, next.dim)
+            .putString(K_STYLE, next.style.name)
             .apply()
     }
 }

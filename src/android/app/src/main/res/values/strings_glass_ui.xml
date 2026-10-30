@@ -15,7 +15,7 @@
     <string name="glass_report_bug">Report a bug</string>
     <string name="glass_coming_soon">Coming soon</string>
     <string name="glass_bots_desc">Build bots from plain language or role cards, and let them work together in group chats.</string>
-    <string name="glass_feed_desc">A personal feed generated from your interests. You can like, discuss, or delete every post.</string>
+    <string name="glass_feed_desc">One stream Minis curates and orders for you from your interests. Like, discuss, or delete any post.</string>
     <string name="glass_backdrop_title">Backdrop &amp; Glass</string>
     <string name="glass_backdrop_subtitle">Glass sidebar, photo or ambient background</string>
     <string name="glass_enable">Glass interface</string>
@@ -40,11 +40,8 @@
     <string name="glass_report_bug_desc">Opens a pre-filled issue with your app and device details</string>
     <string name="glass_group_label">Group</string>
     <string name="glass_sample_notice">Preview · sample content</string>
-    <string name="glass_feed_post1_author">Minis · Reading</string>
     <string name="glass_feed_post1">Three long reads on local-first software you bookmarked last week, summarised in two minutes each.</string>
-    <string name="glass_feed_post2_author">Minis · Travel</string>
     <string name="glass_feed_post2">Autumn leaves peak around the West Lake hills next weekend. A quiet morning route that avoids the crowds.</string>
-    <string name="glass_feed_post3_author">Minis · Code</string>
     <string name="glass_feed_post3">Kotlin 2.2 is out. What changes for coroutines and Compose in projects like yours.</string>
     <string name="glass_idea1">A weekend app that turns voice memos into a reading list</string>
     <string name="glass_idea2">Bot group chat: planner + critic + writer for weekly reports</string>
@@ -54,4 +51,9 @@
     <string name="glass_bot2_desc">Reviews drafts and points out weak arguments</string>
     <string name="glass_bot3_desc">Writes in your tone from short notes</string>
     <string name="glass_create_bot">Create bot</string>
+    <string name="glass_section_style">Style</string>
+    <string name="glass_style_dusk">Dusk glass</string>
+    <string name="glass_style_dusk_desc">Dark, deep frosted glass</string>
+    <string name="glass_style_warm">Warm white</string>
+    <string name="glass_style_warm_desc">Light, warm and minimal</string>
 </resources>

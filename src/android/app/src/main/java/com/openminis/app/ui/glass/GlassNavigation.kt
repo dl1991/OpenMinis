@@ -86,6 +86,7 @@ fun GlassDrawerHost(
         gesturesEnabled = drawerState.isOpen,
         scrimColor = Color.Black.copy(alpha = 0.16f),
         drawerContent = {
+          GlassStyleTheme {
             GlassSidebar(
                 items = items,
                 haze = haze,
@@ -106,6 +107,7 @@ fun GlassDrawerHost(
                     }
                 },
             )
+          }
         },
     ) {
         Box(Modifier.fillMaxSize().hazeSource(haze)) {

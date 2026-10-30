@@ -40,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -53,8 +55,6 @@ import androidx.compose.ui.unit.sp
 import com.openminis.app.R
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
-
-private val SidebarShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
 
 /**
  * [fork/glass-ui] The sidebar has one job: the recent list. Chats and bot
@@ -70,22 +70,22 @@ fun GlassSidebar(
     onNewChat: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dark = GlassStyles.isDarkTheme()
-    val fg = if (dark) Color.White else Color(0xFF14171F)
+    val style = LocalGlassStyle.current
+    val dark = style == GlassStyle.DUSK
+    val fg = if (dark) GlassPalette.DuskOn else GlassPalette.WarmOn
     val fgMuted = fg.copy(alpha = 0.6f)
     var query by rememberSaveable { mutableStateOf("") }
     val shown = remember(items, query) { RecentItems.merge(items, emptyList(), query) }
 
-    val edge = Brush.horizontalGradient(
-        listOf(Color.White.copy(alpha = 0f), Color.White.copy(alpha = if (dark) 0.18f else 0.7f)),
-    )
+    val hairline = GlassStyles.hairline(style)
     Box(
         modifier
             .width(minOf(LocalConfiguration.current.screenWidthDp * 0.84f, 340f).dp)
             .fillMaxHeight()
-            .clip(SidebarShape)
-            .hazeEffect(state = haze, style = GlassStyles.sheet(dark))
-            .border(0.8.dp, edge, SidebarShape),
+            .hazeEffect(state = haze, style = GlassStyles.sheet(style))
+            .drawBehind {
+                drawLine(hairline, Offset(size.width, 0f), Offset(size.width, size.height), strokeWidth = 1f)
+            },
     ) {
         Column(
             Modifier

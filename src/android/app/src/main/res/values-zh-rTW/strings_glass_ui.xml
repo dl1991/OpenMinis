@@ -15,7 +15,7 @@
     <string name="glass_report_bug">一鍵回報 Bug</string>
     <string name="glass_coming_soon">即將推出</string>
     <string name="glass_bots_desc">用自然語言或角色卡建立 Bot，並讓它們在群聊中協作。</string>
-    <string name="glass_feed_desc">根據你的興趣生成的個人動態，每則都可以按讚、討論或刪除。</string>
+    <string name="glass_feed_desc">Minis 根據你的興趣整理並排序的一條動態流，每則都可以按讚、討論或刪除。</string>
     <string name="glass_backdrop_title">背景與毛玻璃</string>
     <string name="glass_backdrop_subtitle">毛玻璃側邊欄、照片或氛圍背景</string>
     <string name="glass_enable">毛玻璃介面</string>
@@ -40,11 +40,8 @@
     <string name="glass_report_bug_desc">開啟已填好 App 與裝置資訊的問題單</string>
     <string name="glass_group_label">群聊</string>
     <string name="glass_sample_notice">預覽 · 範例內容</string>
-    <string name="glass_feed_post1_author">Minis · 閱讀</string>
     <string name="glass_feed_post1">你上週收藏的三篇本地優先軟體長文，每篇兩分鐘讀完重點。</string>
-    <string name="glass_feed_post2_author">Minis · 出行</string>
     <string name="glass_feed_post2">西湖群山的秋葉下週末最好看，附一條避開人潮的清晨路線。</string>
-    <string name="glass_feed_post3_author">Minis · 程式</string>
     <string name="glass_feed_post3">Kotlin 2.2 發布了：對你這類專案的協程與 Compose 有哪些影響。</string>
     <string name="glass_idea1">把語音備忘變成閱讀清單的週末小 App</string>
     <string name="glass_idea2">Bot 群聊：規劃者 + 評審 + 寫手，一起寫週報</string>
@@ -54,4 +51,9 @@
     <string name="glass_bot2_desc">審閱草稿，指出論證薄弱處</string>
     <string name="glass_bot3_desc">根據簡短筆記，用你的語氣寫作</string>
     <string name="glass_create_bot">建立 Bot</string>
+    <string name="glass_section_style">風格</string>
+    <string name="glass_style_dusk">暮色玻璃</string>
+    <string name="glass_style_dusk_desc">深色、深邃的磨砂玻璃</string>
+    <string name="glass_style_warm">暖白簡約</string>
+    <string name="glass_style_warm_desc">明亮、溫暖、簡約</string>
 </resources>

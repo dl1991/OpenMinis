@@ -81,15 +81,14 @@ private fun Initial(text: String, color: Color, size: Int = 36) {
     }
 }
 
-/** Feed: a clean single-column card list (Threads / Jike style). */
+/** Feed: one clean single-column card stream (Threads / Jike style), no category filters. */
 @Composable
 fun GlassFeedPage() {
     val bottom = LocalGlassBottomInset.current
-    val posts = listOf(
-        Triple(R.string.glass_feed_post1_author, R.string.glass_feed_post1, Color(0xFF7C8CF8)),
-        Triple(R.string.glass_feed_post2_author, R.string.glass_feed_post2, Color(0xFF5CC8A8)),
-        Triple(R.string.glass_feed_post3_author, R.string.glass_feed_post3, Color(0xFFF59E7A)),
-    )
+    // One unified stream, curated and ordered by Minis: no categories/filters.
+    val posts = listOf(R.string.glass_feed_post1, R.string.glass_feed_post2, R.string.glass_feed_post3)
+    val appName = stringResource(R.string.app_name)
+    val accent = MaterialTheme.colorScheme.primary
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = bottom + 16.dp),
@@ -104,7 +103,7 @@ fun GlassFeedPage() {
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
         }
-        items(posts) { (author, body, color) ->
+        items(posts) { body ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(22.dp),
@@ -112,9 +111,9 @@ fun GlassFeedPage() {
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Initial(stringResource(author), color)
+                        Initial(appName, accent)
                         Spacer(Modifier.width(10.dp))
-                        Text(stringResource(author), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        Text(appName, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                     }
                     Spacer(Modifier.height(10.dp))
                     Text(stringResource(body), style = MaterialTheme.typography.bodyLarge)

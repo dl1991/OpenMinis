@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,7 +45,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -70,9 +73,8 @@ enum class GlassTab(val labelRes: Int, val icon: ImageVector, val selectedIcon: 
     SETTINGS(R.string.glass_tab_settings, Icons.Outlined.Settings, Icons.Filled.Settings),
 }
 
-/** Height the floating bar occupies above the navigation-bar inset. */
-val GlassTabBarHeight: Dp = 64.dp
-val GlassTabBarBottomGap: Dp = 12.dp
+/** Height of the docked bar above the navigation-bar inset. */
+val GlassTabBarHeight: Dp = 60.dp
 
 /**
  * Bottom space a page under the bar should leave (content padding for lists
@@ -82,7 +84,7 @@ val LocalGlassBottomInset = compositionLocalOf { 0.dp }
 
 /**
  * [fork/glass-ui] Hosts one tab page: backdrop + page as the Haze source, and
- * the floating glass pill above it. [scrollUnder] = true lets the page draw
+ * the docked glass bar (full width, hairline top border) above it. [scrollUnder] = true lets the page draw
  * beneath the bar (it must honour [LocalGlassBottomInset] as content
  * padding); false pads the page instead, for stock screens with their own
  * bottom FABs.
@@ -95,9 +97,11 @@ fun GlassTabShell(
     showBackdrop: Boolean = true,
     content: @Composable BoxScope.() -> Unit,
 ) {
+  GlassStyleTheme {
     val haze = rememberHazeState()
-    val dark = GlassStyles.isDarkTheme()
-    val inset = GlassTabBarHeight + GlassTabBarBottomGap + 8.dp
+    val style = LocalGlassStyle.current
+    GlassSystemBars(lightIcons = style == GlassStyle.DUSK)
+    val inset = GlassTabBarHeight
     Box(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxSize().hazeSource(haze)) {
             if (showBackdrop) GlassScreenBackdrop()
@@ -109,7 +113,8 @@ fun GlassTabShell(
                         else Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = inset),
                     ),
             ) {
-                CompositionLocalProvider(LocalGlassBottomInset provides if (scrollUnder) inset else 0.dp) {
+                val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                CompositionLocalProvider(LocalGlassBottomInset provides if (scrollUnder) inset + navBottom else 0.dp) {
                     content()
                 }
             }
@@ -117,13 +122,30 @@ fun GlassTabShell(
         GlassTabBar(
             current = current,
             onSelect = onSelect,
-            dark = dark,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(bottom = GlassTabBarBottomGap, start = 20.dp, end = 20.dp),
+            style = style,
+            modifier = Modifier.align(Alignment.BottomCenter),
             haze = haze,
         )
+    }
+  }
+}
+
+/** Status/navigation bar icon colour while a glass page is showing; restored after. */
+@Composable
+private fun GlassSystemBars(lightIcons: Boolean) {
+    val view = androidx.compose.ui.platform.LocalView.current
+    if (view.isInEditMode) return
+    androidx.compose.runtime.DisposableEffect(lightIcons) {
+        val window = (view.context as? android.app.Activity)?.window
+        val ctl = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        val prevStatus = ctl?.isAppearanceLightStatusBars
+        val prevNav = ctl?.isAppearanceLightNavigationBars
+        ctl?.isAppearanceLightStatusBars = !lightIcons
+        ctl?.isAppearanceLightNavigationBars = !lightIcons
+        onDispose {
+            if (prevStatus != null) ctl.isAppearanceLightStatusBars = prevStatus
+            if (prevNav != null) ctl.isAppearanceLightNavigationBars = prevNav
+        }
     }
 }
 
@@ -144,67 +166,64 @@ fun GlassScreenBackdrop() {
 private fun GlassTabBar(
     current: GlassTab,
     onSelect: (GlassTab) -> Unit,
-    dark: Boolean,
+    style: GlassStyle,
     haze: dev.chrisbanes.haze.HazeState,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(percent = 50)
-    val fg = if (dark) Color.White else Color(0xFF15181E)
-    val accent = MaterialTheme.colorScheme.primary
-    val edge = Brush.verticalGradient(
-        listOf(Color.White.copy(alpha = if (dark) 0.28f else 0.85f), Color.White.copy(alpha = if (dark) 0.06f else 0.25f)),
-    )
-    Row(
+    val selectedColor = if (style == GlassStyle.DUSK) Color.White else GlassPalette.WarmOn
+    val idleColor = if (style == GlassStyle.DUSK) Color.White.copy(alpha = 0.50f) else GlassPalette.WarmOn.copy(alpha = 0.42f)
+    val hairline = GlassStyles.hairline(style)
+    Column(
         modifier
-            .widthIn(max = 480.dp)
             .fillMaxWidth()
-            .height(GlassTabBarHeight)
-            .shadow(18.dp, shape, ambientColor = Color.Black.copy(alpha = 0.18f), spotColor = Color.Black.copy(alpha = 0.18f))
-            .clip(shape)
-            .hazeEffect(state = haze, style = GlassStyles.bar(dark))
-            .border(0.8.dp, edge, shape)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+            .hazeEffect(state = haze, style = GlassStyles.bar(style))
+            .drawBehind {
+                drawLine(hairline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1f)
+            },
     ) {
-        GlassTab.entries.forEach { tab ->
-            val selected = tab == current
-            val label = stringResource(tab.labelRes)
-            val pill by animateColorAsState(
-                if (selected) (if (dark) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.06f)) else Color.Transparent,
-                label = "tabPill",
-            )
-            Column(
-                Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(shape)
-                    .background(pill)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        role = Role.Tab,
-                    ) { onSelect(tab) }
-                    .semantics {
-                        this.selected = selected
-                        contentDescription = label
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Icon(
-                    if (selected) tab.selectedIcon else tab.icon,
-                    contentDescription = null,
-                    tint = if (selected) accent else fg.copy(alpha = 0.72f),
-                    modifier = Modifier.size(22.dp),
-                )
-                Text(
-                    label,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    color = if (selected) accent else fg.copy(alpha = 0.72f),
-                )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(GlassTabBarHeight),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassTab.entries.forEach { tab ->
+                val selected = tab == current
+                val label = stringResource(tab.labelRes)
+                val color by animateColorAsState(if (selected) selectedColor else idleColor, label = "tabColor")
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Tab,
+                        ) { onSelect(tab) }
+                        .semantics {
+                            this.selected = selected
+                            contentDescription = label
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        if (selected) tab.selectedIcon else tab.icon,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(23.dp),
+                    )
+                    Text(
+                        label,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        color = color,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                    )
+                }
             }
         }
+        // Fill continues under the system navigation bar.
+        Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars))
     }
 }

@@ -61,6 +61,15 @@ object AmbientPalette {
         alpha = 1f,
     )
 
+    /**
+     * Pull the time/weather palette toward the chosen glass style: A (dusk)
+     * keeps it deep and moody, B (warm white) washes it out to a soft cream.
+     */
+    fun styled(colors: List<Color>, style: GlassStyle): List<Color> = when (style) {
+        GlassStyle.DUSK -> colors.mapIndexed { i, c -> lerp(c, if (i % 2 == 0) Color(0xFF2A1F45) else Color(0xFF5A3A5E), 0.45f) }
+        GlassStyle.WARM -> colors.map { lerp(it, Color(0xFFF7EFE4), 0.65f) }
+    }
+
     /** Whether text over this palette should be light. */
     fun isDark(phase: DayPhase, kind: WeatherKind): Boolean =
         phase == DayPhase.NIGHT || kind == WeatherKind.STORM ||

@@ -102,7 +102,7 @@ fun BackdropSettingsScreen(onBack: () -> Unit) {
                     .height(180.dp)
                     .clip(RoundedCornerShape(24.dp)),
             ) {
-                GlassBackdrop(settings = settings)
+                GlassStyleTheme { GlassScreenBackdrop() }
             }
             Spacer(Modifier.height(8.dp))
             val itemColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background)
@@ -114,6 +114,18 @@ fun BackdropSettingsScreen(onBack: () -> Unit) {
                 },
                 colors = itemColors,
             )
+            Text(
+                stringResource(R.string.glass_section_style),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+            ChoiceRow(settings.style == GlassStyle.DUSK, R.string.glass_style_dusk, R.string.glass_style_dusk_desc) {
+                GlassPrefs.update(context) { s -> s.copy(style = GlassStyle.DUSK) }
+            }
+            ChoiceRow(settings.style == GlassStyle.WARM, R.string.glass_style_warm, R.string.glass_style_warm_desc) {
+                GlassPrefs.update(context) { s -> s.copy(style = GlassStyle.WARM) }
+            }
             Text(
                 stringResource(R.string.glass_section_backdrop),
                 style = MaterialTheme.typography.titleSmall,
@@ -152,7 +164,11 @@ fun BackdropSettingsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ModeRow(mode: BackdropMode, title: Int, desc: Int, current: BackdropMode, onClick: () -> Unit) {
+private fun ModeRow(mode: BackdropMode, title: Int, desc: Int, current: BackdropMode, onClick: () -> Unit) =
+    ChoiceRow(mode == current, title, desc, onClick)
+
+@Composable
+private fun ChoiceRow(selected: Boolean, title: Int, desc: Int, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -161,7 +177,7 @@ private fun ModeRow(mode: BackdropMode, title: Int, desc: Int, current: Backdrop
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RadioButton(selected = mode == current, onClick = onClick)
+        RadioButton(selected = selected, onClick = onClick)
         Spacer(Modifier.width(4.dp))
         Column {
             Text(stringResource(title), style = MaterialTheme.typography.bodyLarge)

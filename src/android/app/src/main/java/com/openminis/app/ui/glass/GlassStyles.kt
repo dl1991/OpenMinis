@@ -15,38 +15,32 @@ import dev.chrisbanes.haze.HazeTint
  * opaque to keep text legible over an un-blurred backdrop.
  */
 object GlassStyles {
-    /** Floating pill tab bar (iOS 26 "Liquid Glass"-like, light material). */
+    private fun tint(style: GlassStyle) =
+        if (style == GlassStyle.DUSK) GlassPalette.DuskTint else GlassPalette.WarmTint
+
+    /** Docked bottom bar: subtle translucent fill. */
     @Composable
     @ReadOnlyComposable
-    fun bar(dark: Boolean): HazeStyle {
-        val base = if (dark) Color(0xFF1C1F26) else Color(0xFFF7F8FA)
-        return HazeStyle(
-            backgroundColor = MaterialTheme.colorScheme.surface,
-            tints = listOf(HazeTint(base.copy(alpha = if (dark) 0.50f else 0.55f))),
-            blurRadius = 22.dp,
-            noiseFactor = 0.06f,
-            fallbackTint = HazeTint(base.copy(alpha = 0.94f)),
-        )
-    }
+    fun bar(style: GlassStyle): HazeStyle = HazeStyle(
+        backgroundColor = MaterialTheme.colorScheme.background,
+        tints = listOf(HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.58f else 0.70f))),
+        blurRadius = 24.dp,
+        noiseFactor = 0.04f,
+        fallbackTint = HazeTint(tint(style).copy(alpha = 0.95f)),
+    )
 
     /** Sidebar sheet: a little denser than the bar so long lists stay readable. */
     @Composable
     @ReadOnlyComposable
-    fun sheet(dark: Boolean): HazeStyle {
-        val base = if (dark) Color(0xFF15181E) else Color(0xFFFBFBFC)
-        return HazeStyle(
-            backgroundColor = MaterialTheme.colorScheme.surface,
-            tints = listOf(HazeTint(base.copy(alpha = if (dark) 0.62f else 0.68f))),
-            blurRadius = 32.dp,
-            noiseFactor = 0.05f,
-            fallbackTint = HazeTint(base.copy(alpha = 0.97f)),
-        )
-    }
+    fun sheet(style: GlassStyle): HazeStyle = HazeStyle(
+        backgroundColor = MaterialTheme.colorScheme.background,
+        tints = listOf(HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.66f else 0.76f))),
+        blurRadius = 32.dp,
+        noiseFactor = 0.04f,
+        fallbackTint = HazeTint(tint(style).copy(alpha = 0.97f)),
+    )
 
-    /** Is the app currently drawn dark (drives glass tint + foreground)? */
-    @Composable
-    @ReadOnlyComposable
-    fun isDarkTheme(): Boolean = MaterialTheme.colorScheme.background.let {
-        (0.299f * it.red + 0.587f * it.green + 0.114f * it.blue) < 0.5f
-    }
+    /** Hairline colour for borders/dividers on glass. */
+    fun hairline(style: GlassStyle): Color =
+        if (style == GlassStyle.DUSK) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
 }
