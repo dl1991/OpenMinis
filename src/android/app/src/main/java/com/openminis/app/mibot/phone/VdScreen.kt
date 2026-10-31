@@ -288,7 +288,7 @@ fun VdScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(MibotSpace.S))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(MibotSpace.S)) {
                     Box(Modifier.weight(1f)) { SmallField(code, { code = it.take(8) }, t("6 位配对码", "6-digit code"), number = true) }
-                    Box(Modifier.width(88.dp)) { SmallField(port, { port = it.take(5) }, t("端口(可选)", "Port (opt.)"), number = true) }
+                    Box(Modifier.width(88.dp)) { SmallField(port, { port = it.take(5) }, t("端口", "Port"), number = true) }
                     MibotButton(t("配对", "Pair"), { phone.pairing.submit(code, PairingCode.port(port)) }, enabled = code.length >= 6)
                 }
                 Spacer(Modifier.height(MibotSpace.S))

@@ -113,9 +113,9 @@ if [ "${SDK:-0}" -ge 31 ]; then
   adb shell "ps -A -o USER,PID,NAME | grep vdhelper" > "$VD/helper-ps.txt" 2>&1 || true
   cat "$VD/helper-ps.txt"
   adb shell am force-stop $PKG; sleep 2
-  adb shell am start -W -a android.intent.action.VIEW -d "minis://settings/virtual-display" \
-     -n $PKG/com.openminis.app.MainActivity --ez ci_vd_demo true > "$VD/start-demo.txt"
-  sleep 30
+  # Relaunch (the helper must re-attach by itself), then open the page via deep link.
+  adb shell am start -W -n $PKG/com.openminis.app.MainActivity --ez ci_vd_demo true > "$VD/start-demo.txt"; sleep 12
+  link virtual-display; sleep 30
   adb exec-out screencap -p > "$VD/vd-live.png"; echo "vd shot: $(stat -c%s "$VD/vd-live.png") bytes"
   adb shell dumpsys display > "$VD/dumpsys-display.txt" 2>&1 || true
   grep -n "mibot-agent" "$VD/dumpsys-display.txt" | head -5 || echo "no mibot-agent display"
