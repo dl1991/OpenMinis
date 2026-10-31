@@ -146,14 +146,22 @@ fun BackgroundThemeScreen(onBack: () -> Unit, onMoreAppearance: () -> Unit) {
             )
         }
         photoError?.let {
-            Text(t("无法加载图片：", "Couldn't load the image: ") + it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp,
+            Text(t("无法加载图片：", "Couldn't load the image: ") + it, color = MaterialTheme.colorScheme.error, fontSize = com.openminis.app.mibot.design.MibotType.Secondary,
                 modifier = Modifier.padding(start = 28.dp, end = 28.dp, top = 8.dp))
         }
         if (settings.mode == BackdropMode.PHOTO) {
             MibotSectionHeader(t("照片遮罩", "Photo veil"))
             MibotCard(padding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
                 Slider(value = settings.dim, onValueChange = { v -> GlassPrefs.update(ctx) { it.copy(dim = v) } }, valueRange = 0.15f..0.9f)
-                Text(t("越高文字越清楚", "Higher = more legible text"), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(t("越高文字越清楚", "Higher = more legible text"), fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            MibotCard(Modifier.padding(top = 8.dp)) {
+                MibotRow(
+                    t("照片上叠加云雾", "Clouds over the photo"),
+                    t("在照片上缓慢飘过一层柔和云雾", "A soft drifting cloud layer over your photo"),
+                    chevron = false,
+                    trailing = { Switch(checked = settings.fogOverPhoto, onCheckedChange = { on -> GlassPrefs.update(ctx) { it.copy(fogOverPhoto = on) } }) },
+                )
             }
             Row(Modifier.padding(16.dp)) { MibotButton(t("更换照片", "Change photo"), tonal = true, onClick = { pick() }) }
         }
@@ -165,7 +173,7 @@ fun BackgroundThemeScreen(onBack: () -> Unit, onMoreAppearance: () -> Unit) {
                 swatches.forEach { argb ->
                     val c = if (argb == 0) MibotTokens.accent().copy(alpha = 0.25f) else Color(argb)
                     Box(
-                        Modifier.size(38.dp).clip(CircleShape).background(c)
+                        Modifier.size(32.dp).clip(CircleShape).background(c)
                             .border(if (settings.solidColor == argb) 3.dp else 1.dp, if (settings.solidColor == argb) MibotTokens.accent() else MibotTokens.hairline(), CircleShape)
                             .clickable { GlassPrefs.update(ctx) { it.copy(solidColor = argb) } },
                     )

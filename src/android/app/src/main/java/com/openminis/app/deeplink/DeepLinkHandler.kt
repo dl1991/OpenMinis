@@ -204,6 +204,7 @@ object DeepLinkHandler {
             "vault" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.LIST)
             "gateway" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY)
             "sandbox" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX)
+            "virtual-display", "vd", "background-control" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.phone.VdRoutes.PAGE)
             "diagnostics" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.settings.DiagnosticsRoutes.DIAGNOSTICS)
             "about" -> DeepLinkAction.OpenSettingsScreen(Routes.ABOUT)
             "network" -> DeepLinkAction.OpenSettingsScreen(Routes.NETWORK)

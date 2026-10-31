@@ -56,7 +56,7 @@ import com.openminis.app.R
 @Composable
 private fun PageHeader(title: String, horizontal: Int = 20) {
     Column(Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(start = horizontal.dp, end = horizontal.dp, top = 20.dp, bottom = 8.dp)) {
-        Text(title, fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        Text(title, fontSize = com.openminis.app.mibot.design.MibotType.PageHeader, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(6.dp))
         Text(
             stringResource(R.string.glass_sample_notice),
@@ -115,15 +115,15 @@ fun GlassFeedPage() {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Initial(appName, accent)
                         Spacer(Modifier.width(10.dp))
-                        Text(appName, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        Text(appName, fontWeight = FontWeight.SemiBold, fontSize = com.openminis.app.mibot.design.MibotType.Body)
                     }
                     Spacer(Modifier.height(10.dp))
                     Text(stringResource(body), style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        Icon(Icons.Outlined.FavoriteBorder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                        Icon(Icons.AutoMirrored.Outlined.Chat, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                        Icon(Icons.Outlined.DeleteOutline, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Outlined.FavoriteBorder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
+                        Icon(Icons.AutoMirrored.Outlined.Chat, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
+                        Icon(Icons.Outlined.DeleteOutline, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
                     }
                 }
             }
@@ -199,7 +199,7 @@ fun GlassBotsPage() {
                 )
                 Spacer(Modifier.height(12.dp))
                 FilledTonalButton(onClick = {}, enabled = false) {
-                    Icon(Icons.Outlined.Add, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Add, null, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.glass_create_bot))
                 }
@@ -215,7 +215,7 @@ fun GlassBotsPage() {
                     Initial(name, color, 44)
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(name, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Text(name, fontWeight = FontWeight.SemiBold, fontSize = com.openminis.app.mibot.design.MibotType.TitleSmall)
                         Text(stringResource(desc), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     AssistChip(onClick = {}, enabled = false, label = { Text(stringResource(R.string.glass_coming_soon)) })

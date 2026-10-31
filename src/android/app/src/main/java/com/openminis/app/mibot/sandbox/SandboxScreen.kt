@@ -93,13 +93,13 @@ fun SandboxScreen(
         Spacer(Modifier.size(8.dp))
         MibotCard(padding = PaddingValues(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconChip(Icons.Outlined.ViewInAr, MibotTokens.Teal, size = 48.dp)
+                IconChip(Icons.Outlined.ViewInAr, MibotTokens.Teal, size = 40.dp, iconSize = com.openminis.app.mibot.design.MibotIcon.Standard)
                 Spacer(Modifier.width(14.dp))
                 androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-                    Text("Alpine Linux" + (version?.let { " $it" } ?: ""), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Alpine Linux" + (version?.let { " $it" } ?: ""), fontSize = com.openminis.app.mibot.design.MibotType.TitleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                     Text(
                         t("PRoot 容器 · 开机自动安装", "PRoot container · installed automatically at boot"),
-                        fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 StatusChip(statusText, kind)
@@ -107,12 +107,12 @@ fun SandboxScreen(
             Spacer(Modifier.size(12.dp))
             Text(
                 t("占用空间：", "Size on disk: ") + if (size >= 0) formatSize(size) else "…",
-                fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface,
+                fontSize = com.openminis.app.mibot.design.MibotType.Body, color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(mgr.rootfsDir.absolutePath, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(mgr.rootfsDir.absolutePath, fontSize = com.openminis.app.mibot.design.MibotType.Caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
             (state as? RootfsInstallState.Failed)?.let {
                 Spacer(Modifier.size(6.dp))
-                Text(it.error, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                Text(it.error, fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.error)
             }
         }
 

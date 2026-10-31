@@ -40,8 +40,8 @@ android {
         applicationId = "com.dl1991.mibot"
         minSdk = 26
         targetSdk = 35
-        versionCode = 37
-        versionName = "1.15"
+        versionCode = 38
+        versionName = "1.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -91,9 +91,30 @@ android {
         }
     }
 
+    // [fork/mibot-v3] One fixed signing key for every build (CI decodes it from
+    // the MIBOT_KEYSTORE_B64 Actions secret into MIBOT_KEYSTORE_FILE), so a new
+    // APK always installs over the previous one. Without the env vars (local
+    // builds) the stock debug key is used.
+    val mibotKeystore = System.getenv("MIBOT_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (mibotKeystore != null) {
+            create("mibot") {
+                storeFile = mibotKeystore
+                storePassword = System.getenv("MIBOT_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("MIBOT_KEY_ALIAS") ?: "mibot"
+                keyPassword = System.getenv("MIBOT_KEY_PASSWORD") ?: System.getenv("MIBOT_KEYSTORE_PASSWORD")
+                storeType = "pkcs12"
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+    }
+    val mibotSigning = if (mibotKeystore != null) signingConfigs.getByName("mibot") else signingConfigs.getByName("debug")
+
     buildTypes {
         getByName("debug") {
             buildConfigField("boolean", "DEV_TOOLS", "true")
+            signingConfig = mibotSigning
         }
         // `perf`: the debug variant minus android:debuggable. ART refuses to
         // AOT-compile a debuggable app (`cmd package compile -m speed`
@@ -110,7 +131,7 @@ android {
             isProfileable = true
             matchingFallbacks += listOf("debug")
             buildConfigField("boolean", "DEV_TOOLS", "true")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = mibotSigning
         }
         release {
             // [OpenMinis#363] Produce native-debug-symbols.zip alongside the
@@ -132,7 +153,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = mibotSigning
         }
     }
 
@@ -178,6 +199,8 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        // [fork/mibot-v3] IMibotShell (background phone-control helper).
+        aidl = true
     }
 
     androidResources {

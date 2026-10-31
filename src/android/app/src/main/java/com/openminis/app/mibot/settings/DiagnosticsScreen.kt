@@ -36,8 +36,8 @@ fun DiagnosticsScreen(
     MibotScaffold(title = t("诊断", "Diagnostics"), onBack = onBack) {
         MibotSectionHeader(t("设备", "Device"))
         MibotCard(padding = PaddingValues(16.dp)) {
-            Text("Mibot ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
-            Text("${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Mibot ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", fontSize = com.openminis.app.mibot.design.MibotType.Body, color = MaterialTheme.colorScheme.onSurface)
+            Text("${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})", fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         MibotSectionHeader(t("测试与记录", "Tests & records"))
         MibotCard {

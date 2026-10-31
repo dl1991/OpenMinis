@@ -74,13 +74,13 @@ private fun BotAvatar(ctx: Context, def: SubAgentDefinition, index: Int) {
         }.getOrNull() else null
     }
     Box(
-        Modifier.size(44.dp).clip(CircleShape).background(avatarColors[index % avatarColors.size]),
+        Modifier.size(36.dp).clip(CircleShape).background(avatarColors[index % avatarColors.size]),
         contentAlignment = Alignment.Center,
     ) {
         if (bmp != null) {
             Image(bmp, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         } else {
-            Text(def.displayName(ctx).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+            Text(def.displayName(ctx).take(1).uppercase(), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = com.openminis.app.mibot.design.MibotType.TitleSmall)
         }
     }
 }

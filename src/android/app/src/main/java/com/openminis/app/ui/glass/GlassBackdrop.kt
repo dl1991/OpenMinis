@@ -96,7 +96,7 @@ private fun AmbientGradient(modifier: Modifier, style: GlassStyle) {
     if (com.openminis.app.ui.theme.LocalMibotActive.current) {
         val dark = com.openminis.app.ui.theme.LocalMibotDark.current
         val sky = remember(hour, weather, dark) { AmbientPalette.sky(dark, hour, weather) }
-        SkyBackdrop(sky, modifier)
+        CloudSky(sky, dark, modifier)
         return
     }
     val colors = remember(hour, weather, style) {
@@ -120,6 +120,11 @@ fun MibotBackdrop(modifier: Modifier = Modifier) {
             val veil = if (dark) androidx.compose.ui.graphics.Color.Black.copy(alpha = settings.dim.coerceIn(0.15f, 0.9f))
             else androidx.compose.ui.graphics.Color.White.copy(alpha = (settings.dim * 0.85f).coerceIn(0.15f, 0.85f))
             Box(Modifier.fillMaxSize().background(veil))
+            // [fork/mibot-v3] Optional soft clouds drifting over the user's photo.
+            if (settings.fogOverPhoto) {
+                val sky = remember(dark) { AmbientPalette.sky(dark, java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY), WeatherKind.UNKNOWN) }
+                CloudSky(sky, dark, cloudsOnly = true)
+            }
         }
     }
 }

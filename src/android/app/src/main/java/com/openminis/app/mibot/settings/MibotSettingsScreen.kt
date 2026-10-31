@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material.icons.outlined.Psychology
+import androidx.compose.material.icons.outlined.PhonelinkSetup
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.SmartToy
@@ -78,6 +79,7 @@ class MibotSettingsActions(
     val diagnostics: () -> Unit,
     val reportBug: () -> Unit,
     val about: () -> Unit,
+    val virtualDisplay: () -> Unit = {},
 )
 
 /**
@@ -132,6 +134,7 @@ fun MibotSettingsScreen(a: MibotSettingsActions) {
                     MibotGridItem(t("定时任务", "Scheduled"), Icons.Outlined.Schedule, MibotTokens.Sky, a.scheduled),
                     MibotGridItem("Bots", Icons.Outlined.SmartToy, MibotTokens.Taupe, a.bots),
                     MibotGridItem(t("人格", "Soul"), Icons.Outlined.Face, MibotTokens.Red, a.soul),
+                    MibotGridItem(t("后台操控", "BG control"), Icons.Outlined.PhonelinkSetup, MibotTokens.Brick, a.virtualDisplay),
                     MibotGridItem(t("诊断", "Diagnose"), Icons.Outlined.MonitorHeart, MibotTokens.Steel, a.diagnostics),
                 ),
             )
@@ -174,6 +177,8 @@ fun MibotSettingsScreen(a: MibotSettingsActions) {
         item {
             MibotSectionHeader(t("运行时 / 沙箱", "Runtime / sandbox"))
             MibotCard {
+                MibotRow(t("后台操控 / 虚拟屏", "Background control"), t("在隐藏虚拟屏操作 App，不占你的屏幕 · 无线调试 / Shizuku", "Operate apps on a hidden display · Wireless Debugging / Shizuku"),
+                    Icons.Outlined.PhonelinkSetup, MibotTokens.Brick, onClick = a.virtualDisplay, showDivider = true)
                 MibotRow(t("沙箱 / 运行环境", "Sandbox / runtime"), t("Alpine Linux · 终端、文件、DNS、重置", "Alpine Linux · terminal, files, DNS, reset"),
                     Icons.Outlined.ViewInAr, MibotTokens.Teal, onClick = a.sandbox, showDivider = true)
                 MibotRow(t("网络路由", "Network routing"), null, Icons.Outlined.Lan, MibotTokens.Sky, onClick = a.network, showDivider = true)

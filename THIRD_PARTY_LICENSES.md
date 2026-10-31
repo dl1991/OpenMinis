@@ -59,6 +59,16 @@ Test-only dependencies: JUnit 4.13.2 (**EPL-1.0**), MockWebServer 4.12.0 (**Apac
 | [models.dev](https://github.com/sst/models.dev) catalogue snapshot | iOS bundle / Android `assets/models-dev-api.json` (offline copy of `https://models.dev/api.json`, refreshed at run time) | **MIT** |
 | [tiktoken](https://github.com/openai/tiktoken) `cl100k_base` BPE ranks | iOS `src/ios/Shared/cl100k_base.tiktoken`; the tokenizer in `BPETokenizer.swift` is ported from tiktoken | **MIT** |
 
+## Mibot fork — adapted source code
+
+| Component | Source | License | Notes |
+|---|---|---|---|
+| [Mika](https://github.com/wangzan101/Mika) | adapted at commit cloned 2026-10-31 | **Apache-2.0** — NOTICE: "Mika / Copyright 2026 wangzan101" | Background phone control in `src/android/app/src/main/java/com/openminis/app/mibot/phone/`: the pure-Kotlin ADB client (Wireless Debugging pairing with SPAKE2/Ed25519, TLS connection, port discovery — `phone/adb/*`), the shell-uid helper (`HelperMain`, `ShellService`, `IMibotShell.aidl`), the Binder handoff (`HelperHandoff`, `HelperHub`), the helper watchdog (`BuiltinShellEngine`, `BuiltinShellManager`), the pairing notification (`Pairing.kt`) and the hidden-display frame reader (`AgentDisplay`). Each adapted file keeps an attribution header and states that it was modified; the combined work is distributed under GPL-3.0-or-later (Apache-2.0 is GPL-3.0-compatible). Mika's bundled ML Kit OCR is **not** included (proprietary Google SDK). |
+| [scrcpy](https://github.com/Genymobile/scrcpy) (via Mika) | `ShellContext.kt` | **Apache-2.0** — Copyright (C) 2018 Genymobile, (C) 2018-2024 Romain Vimont | How a shell-uid process obtains a system Context; header kept in the file. |
+| [Shizuku API](https://github.com/RikkaApps/Shizuku-API) | `dev.rikka.shizuku:api` / `provider` 13.1.5 | **Apache-2.0** | Alternative path to start the same helper when Shizuku is installed and granted. |
+
+No code from Eta (PolyForm Noncommercial) is included.
+
 ## Removed / historical
 
 - **swift-markdown-ui** (MIT) — formerly vendored under `deps/swift-markdown-ui`; no longer referenced by the Xcode project or imported by any source file, and is not part of the open-source tree.

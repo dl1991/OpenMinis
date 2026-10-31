@@ -185,6 +185,14 @@ class MainActivity : ComponentActivity() {
             if (intent?.getBooleanExtra("ci_vault_demo", false) == true) {
                 com.openminis.app.mibot.vault.VaultStore.seedDemo(this)
             }
+            // [fork/mibot-v3] CI: write the "start from a computer" helper script
+            // (adb shell sh …/usb-start.sh) and/or auto-run the hidden-display demo.
+            if (intent?.getBooleanExtra("ci_vd_usb", false) == true) {
+                com.openminis.app.mibot.phone.MibotPhone.get(this).writeUsbScript()
+            }
+            if (intent?.getBooleanExtra("ci_vd_demo", false) == true) {
+                com.openminis.app.mibot.phone.VdDemo.autoDemo = true
+            }
         }
 
         // Register the crash-share "Save to..." launcher BEFORE the
@@ -652,6 +660,11 @@ class MainActivity : ComponentActivity() {
                 // [FEAT-261021-05] A proxy or Tailscale that keeps failing:
                 // a floating banner over every screen (iOS ContentView).
                 com.openminis.app.ui.settings.NetworkAlertBannerHost(navController)
+
+                // [fork/mibot-v3] Small live view of the hidden display while the agent works.
+                com.openminis.app.mibot.phone.VdMiniView(onOpen = {
+                    navController.navigate(com.openminis.app.mibot.phone.VdRoutes.PAGE) { launchSingleTop = true }
+                })
             }
         }
     }

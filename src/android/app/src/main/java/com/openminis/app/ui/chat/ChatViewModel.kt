@@ -14134,6 +14134,9 @@ class ChatViewModel(
             com.openminis.app.mibot.agent.MibotTools.PROVIDER_TOOL ->
                 return com.openminis.app.mibot.agent.MibotTools.executeProvider(context, providerRepository, argsJson)
         }
+        if (name in com.openminis.app.mibot.phone.VdTools.NAMES) {
+            return com.openminis.app.mibot.phone.VdTools.execute(context, name, argsJson)
+        }
         if ((name == "shell_execute" || name == "browser_use") && argsJson.contains("{{vault:")) {
             val sub = com.openminis.app.mibot.vault.VaultBroker.substitute(
                 context, argsJson, actor = "agent", purpose = name, jsonEscape = true,

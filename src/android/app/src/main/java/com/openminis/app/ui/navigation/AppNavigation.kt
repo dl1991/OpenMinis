@@ -726,6 +726,7 @@ fun AppNavigation(
                         diagnostics = go(com.openminis.app.mibot.settings.DiagnosticsRoutes.DIAGNOSTICS),
                         reportBug = { com.openminis.app.ui.glass.ForkBugReport.open(glassContext) },
                         about = go(Routes.ABOUT),
+                        virtualDisplay = go(com.openminis.app.mibot.phone.VdRoutes.PAGE),
                     ),
                 )
             } else
@@ -1777,6 +1778,10 @@ fun AppNavigation(
                 onGateway = { navController.safeNavigate(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY) },
                 onReportBug = { com.openminis.app.ui.glass.ForkBugReport.open(diagContext) },
             )
+        }
+        // [fork/mibot-v3] Background control / hidden virtual display.
+        composable(com.openminis.app.mibot.phone.VdRoutes.PAGE) {
+            com.openminis.app.mibot.phone.VdScreen(onBack = { navController.safePopBackStack() })
         }
         composable(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX) {
             val sbContext = LocalContext.current

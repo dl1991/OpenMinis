@@ -167,7 +167,7 @@ fun MinisTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
-    val typography = scaledTypography(fontScale)
+    val typography = if (mibot) mibotTypography(fontScale) else scaledTypography(fontScale)
     val chatPalette = when {
         mibot && darkTheme -> MibotDarkChatPalette
         mibot -> MibotLightChatPalette
@@ -297,6 +297,40 @@ private fun TextStyle.scale(factor: Float): TextStyle =
  */
 private fun TextStyle.bidi(): TextStyle =
     copy(textDirection = TextDirection.Content, textAlign = TextAlign.Left)
+
+/**
+ * [fork/mibot-v3] Compact Mibot type scale (see MibotType): body 14–14.5sp,
+ * secondary 12–12.5sp, titles 15–18sp, headlines 20–24sp. One family (system
+ * sans → Roboto / Noto Sans CJK SC), weights 400/500/600. The user's font-size
+ * setting still scales it.
+ */
+private fun mibotTypography(factor: Float): Typography {
+    val base = Typography()
+    fun TextStyle.m(size: Float, line: Float, weight: androidx.compose.ui.text.font.FontWeight) = copy(
+        fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+        fontSize = size.sp, lineHeight = line.sp, fontWeight = weight, letterSpacing = 0.sp,
+    ).scale(factor).bidi()
+    val n = androidx.compose.ui.text.font.FontWeight.Normal
+    val md = androidx.compose.ui.text.font.FontWeight.Medium
+    val sb = androidx.compose.ui.text.font.FontWeight.SemiBold
+    return Typography(
+        displayLarge = base.displayLarge.m(34f, 40f, n),
+        displayMedium = base.displayMedium.m(30f, 36f, n),
+        displaySmall = base.displaySmall.m(26f, 32f, n),
+        headlineLarge = base.headlineLarge.m(24f, 30f, sb),
+        headlineMedium = base.headlineMedium.m(22f, 28f, sb),
+        headlineSmall = base.headlineSmall.m(20f, 26f, sb),
+        titleLarge = base.titleLarge.m(18f, 24f, sb),
+        titleMedium = base.titleMedium.m(15f, 21f, md),
+        titleSmall = base.titleSmall.m(13.5f, 19f, md),
+        bodyLarge = base.bodyLarge.m(14.5f, 21f, n),
+        bodyMedium = base.bodyMedium.m(14f, 20f, n),
+        bodySmall = base.bodySmall.m(12f, 17f, n),
+        labelLarge = base.labelLarge.m(13.5f, 18f, md),
+        labelMedium = base.labelMedium.m(12f, 16f, md),
+        labelSmall = base.labelSmall.m(11f, 15f, md),
+    )
+}
 
 private fun scaledTypography(factor: Float): Typography {
     val base = Typography()

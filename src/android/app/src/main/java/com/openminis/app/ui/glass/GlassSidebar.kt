@@ -106,7 +106,7 @@ fun GlassSidebar(
             Text(
                 stringResource(R.string.glass_recent),
                 color = fgMuted,
-                fontSize = 13.sp,
+                fontSize = com.openminis.app.mibot.design.MibotType.Section,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = 12.dp, bottom = 6.dp),
             )
@@ -114,7 +114,7 @@ fun GlassSidebar(
                 Text(
                     stringResource(if (query.isBlank()) R.string.glass_empty_recent else R.string.glass_no_results),
                     color = fgMuted,
-                    fontSize = 14.sp,
+                    fontSize = com.openminis.app.mibot.design.MibotType.Body,
                     modifier = Modifier.padding(start = 12.dp, top = 12.dp),
                 )
             }
@@ -147,15 +147,15 @@ private fun SearchField(
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Outlined.Search, contentDescription = null, tint = fgMuted, modifier = Modifier.size(18.dp))
+        Icon(Icons.Outlined.Search, contentDescription = null, tint = fgMuted, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
         Spacer(Modifier.width(8.dp))
         Box(Modifier.weight(1f)) {
-            if (value.isEmpty()) Text(stringResource(R.string.glass_search_hint), color = fgMuted, fontSize = 15.sp)
+            if (value.isEmpty()) Text(stringResource(R.string.glass_search_hint), color = fgMuted, fontSize = com.openminis.app.mibot.design.MibotType.Body)
             BasicTextField(
                 value = value,
                 onValueChange = onChange,
                 singleLine = true,
-                textStyle = TextStyle(color = fg, fontSize = 15.sp),
+                textStyle = TextStyle(color = fg, fontSize = com.openminis.app.mibot.design.MibotType.Body),
                 cursorBrush = SolidColor(fg),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -176,7 +176,7 @@ private fun RecentRow(item: RecentItem, fg: Color, fgMuted: Color, dark: Boolean
         Text(
             item.title ?: stringResource(R.string.glass_untitled),
             color = fg,
-            fontSize = 15.sp,
+            fontSize = com.openminis.app.mibot.design.MibotType.Body,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),

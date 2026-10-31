@@ -88,9 +88,47 @@ for th in 1:light 2:dark; do
   link gateway;      zshot "$n-07-gateway" 4;  home
   link sandbox;      zshot "$n-08-sandbox" 4;  home
   link add-provider; zshot "$n-09-add-provider" 4; home
+  link virtual-display; zshot "$n-10-vd" 4
+  adb shell input swipe 540 1700 540 700 400; zshot "$n-11-vd-scrolled" 2; home
+  link backdrop;     zshot "$n-12-backdrop" 4; home
   alive || { echo "::error::app died during zh $n pass"; fail=1; }
 done
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb exec-out cat /sdcard/ui.xml > "$ZH/last-ui.xml" || true
+
+# [fork/mibot-v3] Hidden-display end-to-end (Android 12+): the app writes its
+# "start from a computer" script, adb (shell uid) runs it -> helper hands its
+# Binder to the app. Then the app is force-stopped and relaunched: the helper
+# must re-attach on its own. The VD page (ci_vd_demo) creates a hidden display
+# and starts Settings on it; the main screen must keep showing Mibot.
+SDK=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
+if [ "${SDK:-0}" -ge 31 ]; then
+  VD="$OUT/vd"; mkdir -p "$VD"
+  adb shell am force-stop $PKG; sleep 1
+  adb shell am start -W -n $PKG/com.openminis.app.MainActivity --ez ci_vd_usb true > "$VD/start-usb.txt"; sleep 8
+  SCRIPT=/sdcard/Android/data/$PKG/files/usb-start.sh
+  adb shell ls -l "$SCRIPT" > "$VD/script-ls.txt" 2>&1 || true
+  adb shell sh "$SCRIPT" > "$VD/usb-start-out.txt" 2>&1 || true
+  cat "$VD/usb-start-out.txt"
+  sleep 5
+  adb shell "ps -A -o USER,PID,NAME | grep vdhelper" > "$VD/helper-ps.txt" 2>&1 || true
+  cat "$VD/helper-ps.txt"
+  adb shell am force-stop $PKG; sleep 2
+  adb shell am start -W -a android.intent.action.VIEW -d "minis://settings/virtual-display" \
+     -n $PKG/com.openminis.app.MainActivity --ez ci_vd_demo true > "$VD/start-demo.txt"
+  sleep 30
+  adb exec-out screencap -p > "$VD/vd-live.png"; echo "vd shot: $(stat -c%s "$VD/vd-live.png") bytes"
+  adb shell dumpsys display > "$VD/dumpsys-display.txt" 2>&1 || true
+  grep -n "mibot-agent" "$VD/dumpsys-display.txt" | head -5 || echo "no mibot-agent display"
+  adb shell dumpsys activity activities > "$VD/activities.txt" 2>&1 || true
+  grep -nE "Display #|com.android.settings" "$VD/activities.txt" | head -20 || true
+  adb shell dumpsys window | grep -E "mCurrentFocus|mFocusedApp" > "$VD/focus.txt" 2>&1 || true
+  cat "$VD/focus.txt"
+  adb shell input swipe 540 1600 540 600 400; sleep 2
+  adb exec-out screencap -p > "$VD/vd-live-log.png"
+  adb logcat -d -v time | grep -E "MibotHelper|MibotShell|MibotHelperHub|MibotPhone" > "$VD/helper-log.txt" || true
+  tail -40 "$VD/helper-log.txt"
+  alive || { echo "::error::app died during vd e2e"; fail=1; }
+fi
 
 alive || { echo "::error::app died during smoke test"; fail=1; }
 adb logcat -d -v time > "$OUT/logcat.txt" || true

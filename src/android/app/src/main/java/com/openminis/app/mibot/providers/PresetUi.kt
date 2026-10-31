@@ -114,17 +114,17 @@ fun PresetInfoCard(p: ProviderPreset) {
     val ctx = LocalContext.current
     Spacer(Modifier.size(8.dp))
     MibotCard(padding = PaddingValues(16.dp)) {
-        Text(p.name, fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(p.name, fontSize = com.openminis.app.mibot.design.MibotType.TitleSmall, color = MaterialTheme.colorScheme.onSurface)
         note(p)?.let {
             Spacer(Modifier.size(4.dp))
-            Text(it, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(it, fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (p.baseUrl.isNotBlank()) {
             Spacer(Modifier.size(4.dp))
-            Text(p.baseUrl, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(p.baseUrl, fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (p.models.isNotEmpty()) {
-            Text(t("推荐模型：", "Suggested models: ") + p.models.joinToString(", "), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(t("推荐模型：", "Suggested models: ") + p.models.joinToString(", "), fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.size(10.dp))
         Row {

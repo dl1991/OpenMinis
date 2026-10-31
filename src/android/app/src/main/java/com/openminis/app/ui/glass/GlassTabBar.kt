@@ -212,11 +212,11 @@ private fun GlassTabBar(
                         if (selected) tab.selectedIcon else tab.icon,
                         contentDescription = null,
                         tint = color,
-                        modifier = Modifier.size(23.dp),
+                        modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Nav),
                     )
                     Text(
                         label,
-                        fontSize = 10.sp,
+                        fontSize = 10.5.sp,
                         maxLines = 1,
                         color = color,
                         fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,

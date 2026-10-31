@@ -69,7 +69,14 @@ fun ambientMotionAllowed(context: Context): Boolean {
 
 /** Seconds of fog time; advances only while visible and motion is allowed. */
 @Composable
-private fun rememberFogTime(): Float {
+private fun rememberFogTime(): Float = rememberAmbientTime(FRAME_MS)
+
+/**
+ * [fork/mibot-v3] Shared ambient clock. The cloud sky drifts so slowly that
+ * ~15 fps is visually identical to 25 and costs less.
+ */
+@Composable
+internal fun rememberAmbientTime(frameMs: Long = 66L): Float {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     // Seeded from the wall clock so a static frame still varies between visits.
@@ -80,7 +87,7 @@ private fun rememberFogTime(): Float {
             var sinceCheck = 0L
             var allowed = ambientMotionAllowed(context)
             while (true) {
-                delay(if (allowed) FRAME_MS else 1_000L)
+                delay(if (allowed) frameMs else 1_000L)
                 val now = System.nanoTime()
                 val dt = (now - last) / 1e9f
                 last = now

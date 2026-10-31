@@ -86,12 +86,14 @@ object AmbientPalette {
      */
     fun sky(dark: Boolean, hour: Int, kind: WeatherKind): SkyColors {
         val phase = phaseFor(hour)
+        // [fork/mibot-v3] Hazy pastel sky (blue-grey top, warm cream below) with
+        // white / warm-white cloud wisps; night = deep blue with blue-grey mist.
         var s = if (dark) SkyColors(
-            top = Color(0xFF060A16), mid = Color(0xFF111A33), bottom = Color(0xFF1B2440),
-            cloud = Color(0xFF3B4663), fog = Color(0xFF2A3350), stars = 1f, cover = 0.35f, fogAmount = 0.45f,
+            top = Color(0xFF080E1C), mid = Color(0xFF121B32), bottom = Color(0xFF222942),
+            cloud = Color(0xFF3D4A68), fog = Color(0xFF4A5572), stars = 1f, cover = 0.45f, fogAmount = 0.45f,
         ) else SkyColors(
-            top = Color(0xFF8DB9E2), mid = Color(0xFFC6DCEE), bottom = Color(0xFFEDF1F5),
-            cloud = Color(0xFFFFFFFF), fog = Color(0xFFF3F5F8), stars = 0f, cover = 0.45f, fogAmount = 0.55f,
+            top = Color(0xFF9CB9D6), mid = Color(0xFFC8D5E2), bottom = Color(0xFFE8E0D6),
+            cloud = Color(0xFFF7F9FC), fog = Color(0xFFFFF3E8), stars = 0f, cover = 0.45f, fogAmount = 0.5f,
         )
         if (!dark && (phase == DayPhase.DAWN || phase == DayPhase.DUSK)) {
             val warm = Color(0xFFF2C7B0)

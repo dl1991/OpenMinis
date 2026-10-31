@@ -153,12 +153,12 @@ fun VaultListScreen(onBack: () -> Unit, onOpen: (String) -> Unit, onNew: () -> U
         if (shown.isEmpty()) {
             MibotSpacer(24.dp)
             MibotCard(padding = PaddingValues(20.dp)) {
-                Text(t("还没有账号", "No accounts yet"), fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(t("还没有账号", "No accounts yet"), fontSize = com.openminis.app.mibot.design.MibotType.TitleSmall, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.size(6.dp))
                 Text(
                     t("添加网站或服务的登录信息。密码用 Android Keystore 加密保存，AI 只能按你设定的权限请求使用，永远看不到明文。",
                         "Add logins for sites and services. Secrets are encrypted with the Android Keystore; the AI can only request to use them under the permission you set and never sees plaintext."),
-                    fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = com.openminis.app.mibot.design.MibotType.Body, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.size(12.dp))
                 MibotButton(t("添加账号", "Add account"), onClick = onNew)
@@ -280,10 +280,10 @@ fun VaultEditScreen(id: String, onBack: () -> Unit) {
         val labels = statusLabels()
         current?.status?.let { st ->
             MibotCard(padding = PaddingValues(16.dp)) {
-                st.summary(labels).forEach { (k, v) -> Text("$k  $v", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface) }
-                if (st.updatedAt > 0) Text(t("更新于 ", "Updated ") + ago(st.updatedAt), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                st.error?.let { Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
-                st.lastCheckinMessage?.let { Text(t("签到：", "Check-in: ") + it + " · " + ago(st.lastCheckinAt), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                st.summary(labels).forEach { (k, v) -> Text("$k  $v", fontSize = com.openminis.app.mibot.design.MibotType.Body, color = MaterialTheme.colorScheme.onSurface) }
+                if (st.updatedAt > 0) Text(t("更新于 ", "Updated ") + ago(st.updatedAt), fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                st.error?.let { Text(it, fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.error) }
+                st.lastCheckinMessage?.let { Text(t("签到：", "Check-in: ") + it + " · " + ago(st.lastCheckinAt), fontSize = com.openminis.app.mibot.design.MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             MibotSpacer(8.dp)
         }

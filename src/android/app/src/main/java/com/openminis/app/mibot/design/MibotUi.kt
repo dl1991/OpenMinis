@@ -48,9 +48,72 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.openminis.app.ui.theme.LocalMibotDark
+
+/**
+ * [fork/mibot-v3] Design tokens — the ONE place sizes come from. Every Mibot
+ * screen (and the glass sidebar / tab bar) uses these instead of literals, so
+ * the type scale, icon sizes, spacing and radii stay consistent. Compact scale:
+ * body 14sp, secondary 12–13sp, titles 16–17sp, page headers 20sp; icons 20dp
+ * (18dp in dense rows, 24dp only in the bottom navigation). One family: the
+ * system sans (Roboto / Noto Sans CJK SC for Chinese), weights 400/500/600.
+ */
+object MibotType {
+    val PageHeader: TextUnit = 20.sp
+    val Title: TextUnit = 17.sp
+    val TitleSmall: TextUnit = 15.sp
+    val Body: TextUnit = 14.sp
+    val BodyLine: TextUnit = 20.sp
+    val Secondary: TextUnit = 12.5.sp
+    val SecondaryLine: TextUnit = 17.sp
+    val Caption: TextUnit = 11.sp
+    val Footnote: TextUnit = 11.5.sp
+    val Section: TextUnit = 13.sp
+    val Button: TextUnit = 14.sp
+    val Hero: TextUnit = 22.sp
+    val Family: FontFamily = FontFamily.Default
+    val Regular = FontWeight.Normal
+    val Medium = FontWeight.Medium
+    val Semi = FontWeight.SemiBold
+}
+
+object MibotIcon {
+    val Standard: Dp = 20.dp
+    val Dense: Dp = 18.dp
+    val Small: Dp = 16.dp
+    val Nav: Dp = 24.dp
+    /** Tinted round-square behind a row icon. */
+    val RowChip: Dp = 32.dp
+    /** Filled circle in the apps grid. */
+    val GridChip: Dp = 42.dp
+    /** Round frosted back / action button in the top bar. */
+    val TopButton: Dp = 36.dp
+}
+
+object MibotSpace {
+    val XS: Dp = 4.dp
+    val S: Dp = 8.dp
+    val M: Dp = 12.dp
+    val L: Dp = 16.dp
+    val XL: Dp = 20.dp
+    val Screen: Dp = 14.dp
+    val RowMin: Dp = 50.dp
+    val TopBar: Dp = 52.dp
+    val ButtonMin: Dp = 38.dp
+}
+
+object MibotRadius {
+    val Card: Dp = 18.dp
+    val Row: Dp = 12.dp
+    val Chip: Dp = 10.dp
+    val CardShape = RoundedCornerShape(18.dp)
+    val RowShape = RoundedCornerShape(12.dp)
+    val Pill = RoundedCornerShape(50)
+}
 
 /**
  * [fork/mibot-v2] The Mibot design system: one set of tokens (colours, radius,
@@ -60,10 +123,10 @@ import com.openminis.app.ui.theme.LocalMibotDark
  * same components read correctly in the light cloud-sky and the night variant.
  */
 object MibotTokens {
-    val CardRadius: Dp = 22.dp
-    val RowRadius: Dp = 16.dp
-    val ScreenPadding: Dp = 16.dp
-    val CardShape = RoundedCornerShape(22.dp)
+    val CardRadius: Dp = MibotRadius.Card
+    val RowRadius: Dp = MibotRadius.Row
+    val ScreenPadding: Dp = MibotSpace.Screen
+    val CardShape = MibotRadius.CardShape
 
     // Icon chip colours (apps grid / rows), tuned to sit on both variants.
     val Slate = Color(0xFF3E6A8C)
@@ -133,14 +196,14 @@ fun MibotTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowSc
         Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
-            .height(64.dp)
-            .padding(horizontal = 12.dp),
+            .height(MibotSpace.TopBar)
+            .padding(horizontal = MibotSpace.M),
     ) {
         if (onBack != null) {
             Box(
                 Modifier
                     .align(Alignment.CenterStart)
-                    .size(44.dp)
+                    .size(MibotIcon.TopButton)
                     .clip(CircleShape)
                     .background(MibotTokens.card())
                     .border(1.dp, MibotTokens.hairline(), CircleShape)
@@ -148,13 +211,13 @@ fun MibotTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowSc
                     .semantics { contentDescription = "Back" },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(22.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(MibotIcon.Dense))
             }
         }
         Text(
             title,
-            modifier = Modifier.align(Alignment.Center).padding(horizontal = 56.dp),
-            fontSize = 18.sp,
+            modifier = Modifier.align(Alignment.Center).padding(horizontal = 52.dp),
+            fontSize = MibotType.Title,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
@@ -171,12 +234,12 @@ fun MibotPageTitle(title: String, subtitle: String? = null) {
     Column(
         Modifier
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 8.dp),
+            .padding(start = MibotSpace.XL, end = MibotSpace.XL, top = MibotSpace.L, bottom = MibotSpace.S),
     ) {
-        Text(title, fontSize = 30.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        Text(title, fontSize = MibotType.PageHeader, fontWeight = MibotType.Semi, color = MaterialTheme.colorScheme.onBackground)
         if (subtitle != null) {
-            Spacer(Modifier.height(4.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(MibotSpace.XS))
+            Text(subtitle, fontSize = MibotType.Secondary, lineHeight = MibotType.SecondaryLine, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -206,21 +269,21 @@ fun MibotCard(
 @Composable
 fun MibotSectionHeader(text: String, actionLabel: String? = null, onAction: (() -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().padding(start = 28.dp, end = 24.dp, top = 22.dp, bottom = 8.dp),
+        Modifier.fillMaxWidth().padding(start = MibotSpace.Screen + MibotSpace.M, end = MibotSpace.Screen + MibotSpace.S, top = MibotSpace.L, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text,
             modifier = Modifier.weight(1f),
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = MibotType.Section,
+            fontWeight = MibotType.Semi,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (actionLabel != null && onAction != null) {
             Text(
                 "$actionLabel ›",
                 modifier = Modifier.clickable(onClick = onAction),
-                fontSize = 14.sp,
+                fontSize = MibotType.Section,
                 color = MibotTokens.accent(),
             )
         }
@@ -232,8 +295,8 @@ fun MibotSectionHeader(text: String, actionLabel: String? = null, onAction: (() 
  * otherwise a soft tinted round-square with a coloured glyph (list rows).
  */
 @Composable
-fun IconChip(icon: ImageVector, color: Color, size: Dp = 40.dp, filled: Boolean = false) {
-    val shape = if (filled) CircleShape else RoundedCornerShape(size * 0.34f)
+fun IconChip(icon: ImageVector, color: Color, size: Dp = MibotIcon.RowChip, filled: Boolean = false, iconSize: Dp = if (filled) MibotIcon.Standard else MibotIcon.Dense) {
+    val shape = if (filled) CircleShape else RoundedCornerShape(size * 0.32f)
     Box(
         Modifier
             .size(size)
@@ -245,7 +308,7 @@ fun IconChip(icon: ImageVector, color: Color, size: Dp = 40.dp, filled: Boolean 
             icon,
             contentDescription = null,
             tint = if (filled) Color.White else if (LocalMibotDark.current) lighten(color) else color,
-            modifier = Modifier.size(size * 0.5f),
+            modifier = Modifier.size(iconSize),
         )
     }
 }
@@ -273,23 +336,23 @@ fun MibotRow(
         Row(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 60.dp)
+                .heightIn(min = MibotSpace.RowMin)
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = MibotSpace.M + 2.dp, vertical = MibotSpace.S),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
                 IconChip(icon, color)
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(MibotSpace.M))
             }
             Column(Modifier.weight(1f)) {
-                Text(title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(title, fontSize = MibotType.Body, lineHeight = MibotType.BodyLine, fontWeight = MibotType.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 if (!subtitle.isNullOrEmpty()) {
-                    Text(subtitle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(subtitle, fontSize = MibotType.Secondary, lineHeight = MibotType.SecondaryLine, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
             if (trailing != null) {
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(MibotSpace.S))
                 trailing()
             }
             if (chevron) {
@@ -297,13 +360,13 @@ fun MibotRow(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(MibotIcon.Dense),
                 )
             }
         }
         if (showDivider) {
             HorizontalDivider(
-                modifier = Modifier.padding(start = if (icon != null) 70.dp else 16.dp, end = 16.dp),
+                modifier = Modifier.padding(start = if (icon != null) MibotIcon.RowChip + MibotSpace.M * 2 + 2.dp else MibotSpace.M + 2.dp, end = MibotSpace.M + 2.dp),
                 thickness = 0.5.dp,
                 color = MibotTokens.hairline(),
             )
@@ -316,24 +379,24 @@ data class MibotGridItem(val label: String, val icon: ImageVector, val color: Co
 /** 4-column apps grid of coloured circular icons (reference "应用" panel). */
 @Composable
 fun MibotGrid(items: List<MibotGridItem>, columns: Int = 4) {
-    MibotCard(padding = PaddingValues(vertical = 14.dp, horizontal = 6.dp)) {
+    MibotCard(padding = PaddingValues(vertical = MibotSpace.S, horizontal = MibotSpace.XS)) {
         items.chunked(columns).forEach { rowItems ->
             Row(Modifier.fillMaxWidth()) {
                 rowItems.forEach { item ->
                     Column(
                         Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(MibotRadius.RowShape)
                             .clickable(onClick = item.onClick)
-                            .padding(vertical = 10.dp)
+                            .padding(vertical = MibotSpace.S)
                             .semantics { contentDescription = item.label },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        IconChip(item.icon, item.color, size = 52.dp, filled = true)
-                        Spacer(Modifier.height(7.dp))
+                        IconChip(item.icon, item.color, size = MibotIcon.GridChip, filled = true)
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             item.label,
-                            fontSize = 13.sp,
+                            fontSize = MibotType.Secondary,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -365,8 +428,8 @@ fun StatusChip(text: String, kind: ChipKind) {
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(c.copy(alpha = if (dark) 0.24f else 0.14f))
-            .padding(horizontal = 9.dp, vertical = 3.dp),
-        fontSize = 12.sp,
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+        fontSize = MibotType.Caption,
         fontWeight = FontWeight.Medium,
         color = if (dark) lighten(c) else c,
         maxLines = 1,
@@ -389,14 +452,14 @@ fun MibotButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
     }
     Box(
         modifier
-            .heightIn(min = 44.dp)
-            .clip(RoundedCornerShape(50))
+            .heightIn(min = MibotSpace.ButtonMin)
+            .clip(MibotRadius.Pill)
             .background(bg)
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .padding(horizontal = MibotSpace.L, vertical = MibotSpace.S),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, color = fg, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(text, color = fg, fontSize = MibotType.Button, fontWeight = MibotType.Semi, maxLines = 1)
     }
 }
 
@@ -405,10 +468,10 @@ fun MibotButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
 fun MibotFootnote(text: String) {
     Text(
         text,
-        modifier = Modifier.padding(start = 28.dp, end = 28.dp, top = 8.dp),
-        fontSize = 12.sp,
+        modifier = Modifier.padding(start = MibotSpace.Screen + MibotSpace.M, end = MibotSpace.Screen + MibotSpace.M, top = MibotSpace.S),
+        fontSize = MibotType.Footnote,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        lineHeight = 17.sp,
+        lineHeight = 16.sp,
     )
 }
 
@@ -422,8 +485,8 @@ fun MibotFilterChips(options: List<String>, selected: String, onSelect: (String)
         Modifier
             .fillMaxWidth()
             .horizontalScrollCompat()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = MibotSpace.Screen, vertical = MibotSpace.XS),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         options.forEach { opt ->
             val sel = opt == selected
@@ -434,9 +497,9 @@ fun MibotFilterChips(options: List<String>, selected: String, onSelect: (String)
                     .background(if (sel) MibotTokens.accent() else MibotTokens.card())
                     .border(1.dp, if (sel) Color.Transparent else MibotTokens.hairline(), RoundedCornerShape(50))
                     .clickable { onSelect(opt) }
-                    .padding(horizontal = 14.dp, vertical = 7.dp),
+                    .padding(horizontal = MibotSpace.M, vertical = 5.dp),
                 color = if (sel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
+                fontSize = MibotType.Section,
             )
         }
     }
