@@ -55,14 +55,37 @@ if tap text "Warm white"; then
 fi
 tap desc "Chats" >/dev/null 2>&1 || true
 
-# Chinese UI pass (per-app locale, API 33+; ignored on older images).
-if adb shell cmd locale set-app-locales $PKG --locales zh-CN 2>/dev/null; then
-  adb shell am force-stop $PKG; sleep 1; launch zh; sleep 15
-  shot 09-chats-zh 2
-  tap desc "打开侧边栏" && shot 10-sidebar-zh 3 || echo "::warning::zh sidebar button not found"
-  adb shell input keyevent KEYCODE_BACK; sleep 2
-  tap desc "动态" && shot 11-feed-zh 3 || true
-fi
+# Mibot v2 Chinese pass, light + dark. ci_lang/ci_theme/ci_vault_demo are
+# debug-only launch extras (MainActivity); language applies from the next
+# process start on API < 33, so seed once, then relaunch per theme.
+ZH="$OUT/zh"; mkdir -p "$ZH"
+zlaunch() { adb shell am force-stop $PKG; sleep 1
+  adb shell am start -W -n $PKG/com.openminis.app.MainActivity --ez glass_demo true \
+    --es ci_lang zh-CN --ez ci_vault_demo true --ei ci_theme "$1" > "$ZH/start-$2.txt"; sleep "${3:-12}"; }
+zshot() { sleep "${2:-3}"; adb exec-out screencap -p > "$ZH/$1.png"; echo "zh shot: $1 ($(stat -c%s "$ZH/$1.png") bytes)"; }
+link() { adb shell am start -W -a android.intent.action.VIEW -d "minis://settings/$1" $PKG >/dev/null; }
+home() { adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1; tap desc "对话" >/dev/null 2>&1 || true; sleep 1; }
+adb shell am force-stop $PKG; adb shell pm clear $PKG >/dev/null 2>&1 || true
+zlaunch 1 seed 15
+for th in 1:light 2:dark; do
+  m="${th%%:*}"; n="${th##*:}"
+  zlaunch "$m" "$n" 14
+  alive || { echo "::error::app not running (zh $n)"; fail=1; }
+  zshot "$n-01-onboarding" 1
+  if tap desc "打开侧边栏"; then
+    zshot "$n-03-sidebar" 3
+    if tap desc "新对话"; then zshot "$n-02-chat" 3; else echo "::warning::zh new-chat not found ($n)"; fi
+  else echo "::warning::zh sidebar button not found ($n)"; fi
+  home
+  tap desc "Bots" && zshot "$n-04-bots" 3 || echo "::warning::zh Bots tab not found ($n)"
+  tap desc "设置" && zshot "$n-05-settings" 3 || echo "::warning::zh 设置 tab not found ($n)"
+  link vault;        zshot "$n-06-vault" 4;    home
+  link gateway;      zshot "$n-07-gateway" 4;  home
+  link sandbox;      zshot "$n-08-sandbox" 4;  home
+  link add-provider; zshot "$n-09-add-provider" 4; home
+  alive || { echo "::error::app died during zh $n pass"; fail=1; }
+done
+adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb exec-out cat /sdcard/ui.xml > "$ZH/last-ui.xml" || true
 
 alive || { echo "::error::app died during smoke test"; fail=1; }
 adb logcat -d -v time > "$OUT/logcat.txt" || true

@@ -13,6 +13,7 @@ import com.openminis.app.ui.navigation.Routes
  *   minis://session/<id>                        → open specific session
  *   minis://settings                            → Settings home
  *   minis://settings/providers                  → Provider list
+ *   minis://settings/add-provider               → Add-provider preset picker
  *   minis://settings/providers/<instanceId>     → Provider detail
  *   minis://settings/model-groups               → Model Groups (incl. Agent Loop section)
  *   minis://settings/model-groups/<groupId>     → Model Group detail
@@ -166,6 +167,8 @@ object DeepLinkHandler {
         val arg = segments.getOrNull(1)?.takeIf { it.isNotBlank() }
 
         return when (head) {
+            // [fork/mibot-v2] Add-provider preset picker (CI screenshots, agent links).
+            "add-provider", "add_provider" -> DeepLinkAction.OpenSettingsScreen(Routes.ADD_PROVIDER)
             "providers" ->
                 if (arg != null) DeepLinkAction.OpenSettingsScreen(Routes.providerDetail(arg))
                 else DeepLinkAction.OpenSettingsScreen(Routes.PROVIDER_LIST)
