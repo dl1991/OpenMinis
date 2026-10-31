@@ -66,6 +66,11 @@ object AgentTools {
         if (!isHelper && delegateEnabled) {
             add(subAgentTaskDefinition(rosterNames))
         }
+        // [fork/mibot-v2] Account Vault + provider registry tools (main agent only).
+        if (!isHelper) {
+            add(com.openminis.app.mibot.agent.MibotTools.vaultDefinition())
+            add(com.openminis.app.mibot.agent.MibotTools.providerDefinition())
+        }
         if (userAskExposed && !isHelper) add(com.openminis.app.agent.userask.UserAskPromptText.definition())
     }
 

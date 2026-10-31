@@ -20,20 +20,22 @@ import androidx.compose.ui.platform.LocalContext
  */
 object GlassPalette {
     // A: dark dusk glass
-    val DuskBackground = Color(0xFF16131F)
-    val DuskSurface = Color(0xFF201C2C)
-    val DuskOn = Color(0xFFEEEBF6)
-    val DuskOnMuted = Color(0xFFADA7C2)
-    val DuskAccent = Color(0xFFC9B8FF)
-    val DuskTint = Color(0xFF1B1726)
+    // [fork/mibot-v2] "Dusk" now means the night variant of the unified
+    // Mibot design system, "Warm" the light cloud-sky variant.
+    val DuskBackground = Color(0xFF0E121C)
+    val DuskSurface = Color(0xFF1A1F2B)
+    val DuskOn = Color(0xFFECEFF6)
+    val DuskOnMuted = Color(0xFFAAB1C3)
+    val DuskAccent = Color(0xFFEE8E70)
+    val DuskTint = Color(0xFF141925)
 
     // B: warm-white minimal
-    val WarmBackground = Color(0xFFFAF7F2)
-    val WarmSurface = Color(0xFFFFFDF9)
-    val WarmOn = Color(0xFF2B2722)
-    val WarmOnMuted = Color(0xFF746C62)
-    val WarmAccent = Color(0xFF2B2722)
-    val WarmTint = Color(0xFFFBF8F3)
+    val WarmBackground = Color(0xFFF2F4F7)
+    val WarmSurface = Color(0xFFFFFFFF)
+    val WarmOn = Color(0xFF1C212C)
+    val WarmOnMuted = Color(0xFF545B6A)
+    val WarmAccent = Color(0xFFB9503A)
+    val WarmTint = Color(0xFFF7F8FA)
 
     fun scheme(base: ColorScheme, style: GlassStyle): ColorScheme = when (style) {
         GlassStyle.DUSK -> base.copy(
@@ -74,9 +76,19 @@ fun currentGlassSettings(): GlassSettings {
     return s
 }
 
-/** Applies the glass colour scheme for the selected style to [content]. */
+/**
+ * [fork/mibot-v2] Glass pages now share the app-wide Mibot scheme (one design
+ * system); this only publishes which variant is active for the few glass
+ * components that pick hairlines/tints by it. With the Mibot theme off it
+ * still applies the old glass palette.
+ */
 @Composable
 fun GlassStyleTheme(content: @Composable () -> Unit) {
+    if (com.openminis.app.ui.theme.LocalMibotActive.current) {
+        val style = if (com.openminis.app.ui.theme.LocalMibotDark.current) GlassStyle.DUSK else GlassStyle.WARM
+        CompositionLocalProvider(LocalGlassStyle provides style) { content() }
+        return
+    }
     val style = currentGlassSettings().style
     val scheme = GlassPalette.scheme(MaterialTheme.colorScheme, style)
     CompositionLocalProvider(LocalGlassStyle provides style) {

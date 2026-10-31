@@ -755,6 +755,8 @@ class MinisApp : Application(), ImageLoaderFactory {
         NativeOffloadServer.register("android-open", OpenOffloadHandler(this))
         NativeOffloadServer.register("android-photos", PhotosOffloadHandler(this))
         NativeOffloadServer.register("android-player", PlayerOffloadHandler())
+        // [fork/mibot-v2] Account vault CLI offload.
+        NativeOffloadServer.register("vault", com.openminis.app.mibot.vault.VaultOffloadHandler(this))
         NativeOffloadServer.register("android-speak", SpeakOffloadHandler(this))
         NativeOffloadServer.register("android-speech", SpeechOffloadHandler(this))
         NativeOffloadServer.register("android-weather", WeatherOffloadHandler(this))

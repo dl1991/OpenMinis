@@ -156,20 +156,109 @@ private val MinisShapes = Shapes(
 fun MinisTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     fontScale: Float = 1f,
+    // [fork/mibot-v2] Mibot design system: translucent surfaces over the
+    // shared sky backdrop, brick-red accent. False = the stock palette.
+    mibot: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when {
+        mibot && darkTheme -> MibotDarkColorScheme
+        mibot -> MibotLightColorScheme
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
     val typography = scaledTypography(fontScale)
-    val chatPalette = if (darkTheme) DarkChatPalette else LightChatPalette
+    val chatPalette = when {
+        mibot && darkTheme -> MibotDarkChatPalette
+        mibot -> MibotLightChatPalette
+        darkTheme -> DarkChatPalette
+        else -> LightChatPalette
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,
         shapes = MinisShapes,
         typography = typography,
     ) {
-        CompositionLocalProvider(LocalChatPalette provides chatPalette, content = content)
+        CompositionLocalProvider(
+            LocalChatPalette provides chatPalette,
+            LocalMibotActive provides mibot,
+            LocalMibotDark provides darkTheme,
+            content = content,
+        )
     }
 }
+
+/** [fork/mibot-v2] True while the Mibot design system (shared backdrop) is active. */
+val LocalMibotActive = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+/** [fork/mibot-v2] Whether the app is currently rendering its dark variant. */
+val LocalMibotDark = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+// [fork/mibot-v2] Mibot palettes. `background` is transparent so every stock
+// Scaffold shows the shared backdrop; cards/sheets are frosted (translucent)
+// and dialogs stay opaque for legibility.
+val MibotLightColorScheme = lightColorScheme(
+    primary = Color(0xFFB9503A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFF7DCD0),
+    onPrimaryContainer = Color(0xFF4A1D12),
+    secondary = Color(0xFF7D5A4E),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFF1E2DA),
+    onSecondaryContainer = Color(0xFF2E1810),
+    tertiary = Color(0xFF3F729C),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFD6E6F4),
+    onTertiaryContainer = Color(0xFF0E2A40),
+    background = Color.Transparent,
+    onBackground = Color(0xFF1C212C),
+    surface = Color(0x8CFFFFFF),
+    onSurface = Color(0xFF1C212C),
+    surfaceVariant = Color(0xD9FFFFFF),
+    onSurfaceVariant = Color(0xFF545B6A),
+    surfaceContainerLowest = Color(0x99FFFFFF),
+    surfaceContainerLow = Color(0xDEFFFFFF),
+    surfaceContainer = Color(0xEBFBFCFE),
+    surfaceContainerHigh = Color(0xFFF8F9FB),
+    surfaceContainerHighest = Color(0xFFF1F3F7),
+    outline = Color(0xFFA3AAB8),
+    outlineVariant = Color(0x33707A8C),
+    inverseSurface = Color(0xFF2A2F3A),
+    inverseOnSurface = Color(0xFFF1F3F7),
+    error = Color(0xFFC0392B),
+)
+
+val MibotDarkColorScheme = darkColorScheme(
+    primary = Color(0xFFEE8E70),
+    onPrimary = Color(0xFF3A1408),
+    primaryContainer = Color(0xFF5C2B1F),
+    onPrimaryContainer = Color(0xFFFFDBCF),
+    secondary = Color(0xFFD8B9AD),
+    onSecondary = Color(0xFF3A2219),
+    secondaryContainer = Color(0xFF3B2E2C),
+    onSecondaryContainer = Color(0xFFF5DED5),
+    tertiary = Color(0xFF9CC4E8),
+    onTertiary = Color(0xFF0E2A40),
+    tertiaryContainer = Color(0xFF26405A),
+    onTertiaryContainer = Color(0xFFD6E6F4),
+    background = Color.Transparent,
+    onBackground = Color(0xFFECEFF6),
+    surface = Color(0x8C10141E),
+    onSurface = Color(0xFFECEFF6),
+    surfaceVariant = Color(0xCC1A1F2C),
+    onSurfaceVariant = Color(0xFFAAB1C3),
+    surfaceContainerLowest = Color(0x990C0F17),
+    surfaceContainerLow = Color(0xD91A1F2B),
+    surfaceContainer = Color(0xE61D2230),
+    surfaceContainerHigh = Color(0xFF242A38),
+    surfaceContainerHighest = Color(0xFF2C3242),
+    outline = Color(0xFF6C7489),
+    outlineVariant = Color(0x33FFFFFF),
+    inverseSurface = Color(0xFFECEFF6),
+    inverseOnSurface = Color(0xFF1A1F2B),
+    error = Color(0xFFFF8A80),
+)
 
 /**
  * [T-multi-select-share] Re-themes a subtree light or dark regardless of the app's

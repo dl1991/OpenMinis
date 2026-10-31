@@ -74,4 +74,57 @@ object AmbientPalette {
     fun isDark(phase: DayPhase, kind: WeatherKind): Boolean =
         phase == DayPhase.NIGHT || kind == WeatherKind.STORM ||
             (phase == DayPhase.DUSK && kind == WeatherKind.RAIN)
+
+    // ------------------------------------------------------------ v2 sky
+
+    /**
+     * [fork/mibot-v2] Cloud-sky backdrop. Light = soft daytime sky with white
+     * clouds and drifting fog; dark = night sky with stars and blue-grey
+     * clouds. The variant follows the app theme (so text contrast is always
+     * right); the hour only warms the light sky at dawn/dusk, and the weather
+     * only tints/thickens it — nothing about the weather is ever displayed.
+     */
+    fun sky(dark: Boolean, hour: Int, kind: WeatherKind): SkyColors {
+        val phase = phaseFor(hour)
+        var s = if (dark) SkyColors(
+            top = Color(0xFF060A16), mid = Color(0xFF111A33), bottom = Color(0xFF1B2440),
+            cloud = Color(0xFF3B4663), fog = Color(0xFF2A3350), stars = 1f, cover = 0.35f, fogAmount = 0.45f,
+        ) else SkyColors(
+            top = Color(0xFF8DB9E2), mid = Color(0xFFC6DCEE), bottom = Color(0xFFEDF1F5),
+            cloud = Color(0xFFFFFFFF), fog = Color(0xFFF3F5F8), stars = 0f, cover = 0.45f, fogAmount = 0.55f,
+        )
+        if (!dark && (phase == DayPhase.DAWN || phase == DayPhase.DUSK)) {
+            val warm = Color(0xFFF2C7B0)
+            s = s.copy(mid = lerp(s.mid, warm, 0.35f), bottom = lerp(s.bottom, Color(0xFFF6E3D6), 0.4f))
+        }
+        return when (kind) {
+            WeatherKind.CLOUDY -> s.copy(top = lerp(s.top, s.fog, 0.35f), cover = s.cover + 0.25f, stars = s.stars * 0.4f)
+            WeatherKind.FOG -> s.copy(top = lerp(s.top, s.fog, 0.5f), fogAmount = 0.9f, stars = s.stars * 0.2f)
+            WeatherKind.RAIN -> s.copy(
+                top = lerp(s.top, if (dark) Color(0xFF0B1220) else Color(0xFF8E9BAA), 0.5f),
+                mid = lerp(s.mid, if (dark) Color(0xFF162030) else Color(0xFFB5C0CC), 0.4f),
+                cloud = lerp(s.cloud, Color(0xFF9AA6B4), if (dark) 0.2f else 0.35f), cover = s.cover + 0.35f, stars = 0f,
+            )
+            WeatherKind.SNOW -> s.copy(top = lerp(s.top, Color(0xFFDCE6EF), if (dark) 0.1f else 0.45f), cover = s.cover + 0.3f, stars = s.stars * 0.3f)
+            WeatherKind.STORM -> s.copy(
+                top = lerp(s.top, Color(0xFF2C3A47), if (dark) 0.3f else 0.55f),
+                cloud = lerp(s.cloud, Color(0xFF6B7684), 0.5f), cover = s.cover + 0.45f, stars = 0f,
+            )
+            else -> s
+        }.let { it.copy(cover = it.cover.coerceIn(0f, 1f)) }
+    }
 }
+
+data class SkyColors(
+    val top: Color,
+    val mid: Color,
+    val bottom: Color,
+    val cloud: Color,
+    val fog: Color,
+    /** 0..1 star visibility. */
+    val stars: Float,
+    /** 0..1 cloud cover. */
+    val cover: Float,
+    /** 0..1 fog strength. */
+    val fogAmount: Float,
+)

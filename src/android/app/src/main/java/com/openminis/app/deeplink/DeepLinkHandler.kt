@@ -197,6 +197,11 @@ object DeepLinkHandler {
             "background" -> DeepLinkAction.OpenSettingsScreen(Routes.BACKGROUND)
             // [fork/glass-ui] Backdrop & Glass settings.
             "backdrop", "glass" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.ui.glass.GlassRoutes.BACKDROP)
+            // [fork/mibot-v2] Mibot pages.
+            "vault" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.LIST)
+            "gateway" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY)
+            "sandbox" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX)
+            "diagnostics" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.settings.DiagnosticsRoutes.DIAGNOSTICS)
             "about" -> DeepLinkAction.OpenSettingsScreen(Routes.ABOUT)
             "network" -> DeepLinkAction.OpenSettingsScreen(Routes.NETWORK)
             // [FEAT-261021-04] Same paths and aliases as iOS DeepLinkRouter.

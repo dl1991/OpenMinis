@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.app.AlertDialog
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -163,6 +164,27 @@ class MainActivity : ComponentActivity() {
         // the sidebar with sample rows. Debug builds only.
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("glass_demo", false) == true) {
             com.openminis.app.ui.glass.GlassDemo.enabled = true
+        }
+        // [fork/mibot-v2] CI screenshot runs can pin the UI language / theme
+        // (written to the same prefs the Appearance screen uses; the language
+        // applies from the next launch on API < 33). Debug builds only.
+        if (BuildConfig.DEBUG) {
+            val ciPrefs = getSharedPreferences(com.openminis.app.ui.settings.PREF_APPEARANCE, MODE_PRIVATE)
+            intent?.getStringExtra("ci_lang")?.let {
+                ciPrefs.edit().putString(com.openminis.app.ui.settings.KEY_LANGUAGE, it).commit()
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    runCatching {
+                        getSystemService(android.app.LocaleManager::class.java)
+                            ?.applicationLocales = android.os.LocaleList.forLanguageTags(it)
+                    }
+                }
+            }
+            if (intent?.hasExtra("ci_theme") == true) {
+                ciPrefs.edit().putInt(com.openminis.app.ui.settings.KEY_THEME_MODE, intent.getIntExtra("ci_theme", 0)).commit()
+            }
+            if (intent?.getBooleanExtra("ci_vault_demo", false) == true) {
+                com.openminis.app.mibot.vault.VaultStore.seedDemo(this)
+            }
         }
 
         // Register the crash-share "Save to..." launcher BEFORE the
@@ -569,7 +591,10 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
             }
 
-            MinisTheme(darkTheme = darkTheme, fontScale = fontScale) {
+            val mibotOn = androidx.compose.runtime.remember { com.openminis.app.ui.glass.GlassPrefs.flow(this) }
+                .collectAsState().value.enabled
+            MinisTheme(darkTheme = darkTheme, fontScale = fontScale, mibot = mibotOn) {
+                com.openminis.app.mibot.vault.VaultConfirmHost()
                 val navController = rememberNavController().also { this.navController = it }
 
                 // T166: drive `SessionActivityTracker.setPresent` /

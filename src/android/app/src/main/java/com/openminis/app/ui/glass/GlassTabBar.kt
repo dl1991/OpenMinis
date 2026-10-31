@@ -94,7 +94,8 @@ fun GlassTabShell(
     current: GlassTab,
     onSelect: (GlassTab) -> Unit,
     scrollUnder: Boolean,
-    showBackdrop: Boolean = true,
+    // [fork/mibot-v2] The shared backdrop now sits behind the whole NavHost.
+    showBackdrop: Boolean = !com.openminis.app.ui.theme.LocalMibotActive.current,
     content: @Composable BoxScope.() -> Unit,
 ) {
   GlassStyleTheme {
@@ -170,8 +171,8 @@ private fun GlassTabBar(
     haze: dev.chrisbanes.haze.HazeState,
     modifier: Modifier = Modifier,
 ) {
-    val selectedColor = if (style == GlassStyle.DUSK) Color.White else GlassPalette.WarmOn
-    val idleColor = if (style == GlassStyle.DUSK) Color.White.copy(alpha = 0.50f) else GlassPalette.WarmOn.copy(alpha = 0.42f)
+    val selectedColor = MaterialTheme.colorScheme.primary
+    val idleColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
     val hairline = GlassStyles.hairline(style)
     Column(
         modifier

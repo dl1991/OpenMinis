@@ -1974,10 +1974,14 @@ private fun DualFabRow(
                                 onHorizontalDrag = { _, dragAmount -> searchDragX += dragAmount },
                             )
                         }
-                        .shadow(6.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.15f)),
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                        // [fork/mibot-v2] Shadow outside, then clip so the
+                        // translucent container and ripple stay round (no grey
+                        // square behind the button), matching the chat FAB.
+                        .shadow(6.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.15f))
+                        .clip(CircleShape),
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = if (com.openminis.app.ui.theme.LocalMibotActive.current) 0.dp else 4.dp, pressedElevation = if (com.openminis.app.ui.theme.LocalMibotActive.current) 0.dp else 6.dp),
                 ) {
-                    Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.sessionlist_search_action), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.sessionlist_search_action), tint = ChatColors.primaryText, modifier = Modifier.size(24.dp))
                 }
             }
         }

@@ -190,29 +190,7 @@ private fun ChoiceRow(selected: Boolean, title: Int, desc: Int, onClick: () -> U
 object BackdropPhotoStore {
     private const val MAX_EDGE = 2048
 
-    fun importPhoto(context: Context, uri: Uri): String? = runCatching {
-        val resolver = context.contentResolver
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
-        var sample = 1
-        while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= MAX_EDGE) sample *= 2
-        val decoded = resolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
-        } ?: return null
-        val rotation = resolver.openInputStream(uri)?.use {
-            when (ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                else -> 0f
-            }
-        } ?: 0f
-        val upright = if (rotation == 0f) decoded else
-            Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { postRotate(rotation) }, true)
-        val dir = File(context.filesDir, "glass").apply { mkdirs() }
-        val out = File(dir, "backdrop_${System.currentTimeMillis()}.jpg")
-        out.outputStream().use { upright.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-        dir.listFiles()?.filter { it != out }?.forEach { it.delete() }
-        out.absolutePath
-    }.getOrNull()
+    // [fork/mibot-v2] Delegates to the robust importer (ImageDecoder, downsampling, HEIC/WebP).
+    fun importPhoto(context: Context, uri: Uri): String? =
+        com.openminis.app.mibot.settings.MibotPhotoImport.import(context, uri).path
 }

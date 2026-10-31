@@ -7897,6 +7897,12 @@ class ChatViewModel(
      */
     internal fun noteEntryFailed(entryId: String?) {
         if (!entryId.isNullOrEmpty()) recentlyFailedEntryIds.add(entryId)
+        // [fork/mibot-v2] AI gateway: cool the failing account down.
+        if (!entryId.isNullOrEmpty()) {
+            providerRepository.config.value.modelEntries.find { it.id == entryId }?.let {
+                com.openminis.app.mibot.gateway.GatewayHealth.recordFailure(context, it.providerInstanceId, "fallback")
+            }
+        }
     }
 
     private fun adoptFallbackCandidate(candidate: FallbackCandidate) {
@@ -14108,7 +14114,38 @@ class ChatViewModel(
         tools: List<AgentToolDefinition>,
     ): String? = preflightValidateToolCallImpl(name, args, tools)
 
+    /**
+     * [fork/mibot-v2] Mibot tools + vault placeholders. `{{vault:<id>}}` in a
+     * shell_execute / browser_use call is resolved (permission-checked,
+     * audited) just before running, and any echo of the secret is scrubbed
+     * from the result the model sees.
+     */
     private suspend fun executeTool(
+        name: String,
+        argsJson: String,
+        toolId: String,
+        toolBlocks: MutableList<AssistantBlock>,
+        assistantId: String,
+        currentText: String,
+    ): ToolExecutionResult {
+        when (name) {
+            com.openminis.app.mibot.agent.MibotTools.VAULT_TOOL ->
+                return com.openminis.app.mibot.agent.MibotTools.executeVault(context, argsJson)
+            com.openminis.app.mibot.agent.MibotTools.PROVIDER_TOOL ->
+                return com.openminis.app.mibot.agent.MibotTools.executeProvider(context, providerRepository, argsJson)
+        }
+        if ((name == "shell_execute" || name == "browser_use") && argsJson.contains("{{vault:")) {
+            val sub = com.openminis.app.mibot.vault.VaultBroker.substitute(
+                context, argsJson, actor = "agent", purpose = name, jsonEscape = true,
+            )
+            if (sub.error != null) return ToolExecutionResult(sub.error, false)
+            val r = executeToolInner(name, sub.text, toolId, toolBlocks, assistantId, currentText)
+            return r.copy(output = com.openminis.app.mibot.vault.VaultBroker.scrub(r.output, sub.secrets))
+        }
+        return executeToolInner(name, argsJson, toolId, toolBlocks, assistantId, currentText)
+    }
+
+    private suspend fun executeToolInner(
         name: String,
         argsJson: String,
         toolId: String,

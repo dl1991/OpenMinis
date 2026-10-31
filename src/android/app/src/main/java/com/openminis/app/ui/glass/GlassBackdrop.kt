@@ -73,7 +73,12 @@ fun GlassBackdrop(
             }
         }
         BackdropMode.AMBIENT -> AmbientGradient(modifier, settings.style)
-        BackdropMode.PLAIN -> Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+        BackdropMode.PLAIN -> {
+            val dark = com.openminis.app.ui.theme.LocalMibotDark.current
+            val c = if (settings.solidColor != 0) androidx.compose.ui.graphics.Color(settings.solidColor)
+            else if (dark) androidx.compose.ui.graphics.Color(0xFF0E121C) else androidx.compose.ui.graphics.Color(0xFFEEF1F5)
+            Box(modifier.fillMaxSize().background(c))
+        }
     }
 }
 
@@ -88,8 +93,33 @@ private fun AmbientGradient(modifier: Modifier, style: GlassStyle) {
             hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         }
     }
+    if (com.openminis.app.ui.theme.LocalMibotActive.current) {
+        val dark = com.openminis.app.ui.theme.LocalMibotDark.current
+        val sky = remember(hour, weather, dark) { AmbientPalette.sky(dark, hour, weather) }
+        SkyBackdrop(sky, modifier)
+        return
+    }
     val colors = remember(hour, weather, style) {
         AmbientPalette.styled(AmbientPalette.colors(AmbientPalette.phaseFor(hour), weather), style)
     }
     AmbientFog(colors, modifier)
+}
+
+/**
+ * [fork/mibot-v2] The one backdrop behind every screen (drawn under the
+ * NavHost). Photo mode gets a theme-coloured veil so text stays readable.
+ */
+@Composable
+fun MibotBackdrop(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val settings by remember(context) { GlassPrefs.flow(context) }.collectAsState()
+    val dark = com.openminis.app.ui.theme.LocalMibotDark.current
+    Box(modifier.fillMaxSize()) {
+        GlassBackdrop(settings = settings)
+        if (settings.mode == BackdropMode.PHOTO && settings.photoPath != null) {
+            val veil = if (dark) androidx.compose.ui.graphics.Color.Black.copy(alpha = settings.dim.coerceIn(0.15f, 0.9f))
+            else androidx.compose.ui.graphics.Color.White.copy(alpha = (settings.dim * 0.85f).coerceIn(0.15f, 0.85f))
+            Box(Modifier.fillMaxSize().background(veil))
+        }
+    }
 }

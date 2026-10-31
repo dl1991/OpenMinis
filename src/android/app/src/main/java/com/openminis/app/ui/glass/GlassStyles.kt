@@ -22,7 +22,7 @@ object GlassStyles {
     @Composable
     @ReadOnlyComposable
     fun bar(style: GlassStyle): HazeStyle = HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.background,
+        backgroundColor = tint(style),
         tints = listOf(HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.58f else 0.70f))),
         blurRadius = 24.dp,
         noiseFactor = 0.04f,
@@ -33,7 +33,7 @@ object GlassStyles {
     @Composable
     @ReadOnlyComposable
     fun sheet(style: GlassStyle): HazeStyle = HazeStyle(
-        backgroundColor = MaterialTheme.colorScheme.background,
+        backgroundColor = tint(style),
         tints = listOf(HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.66f else 0.76f))),
         blurRadius = 32.dp,
         noiseFactor = 0.04f,
