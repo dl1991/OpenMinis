@@ -64,7 +64,11 @@ zlaunch() { adb shell am force-stop $PKG; sleep 1
     --es ci_lang zh-CN --ez ci_vault_demo true --ei ci_theme "$1" > "$ZH/start-$2.txt"; sleep "${3:-12}"; }
 zshot() { sleep "${2:-3}"; adb exec-out screencap -p > "$ZH/$1.png"; echo "zh shot: $1 ($(stat -c%s "$ZH/$1.png") bytes)"; }
 link() { adb shell am start -W -a android.intent.action.VIEW -d "minis://settings/$1" $PKG >/dev/null; }
-home() { adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1; tap desc "对话" >/dev/null 2>&1 || true; sleep 1; }
+# Back to the chats tab; relaunch if Back left the app.
+front() { adb shell dumpsys window 2>/dev/null | grep -E "mCurrentFocus|mFocusedApp" | grep -q "$PKG"; }
+home() { adb shell input keyevent KEYCODE_BACK; sleep 2
+  front || { adb shell am start -W -n $PKG/com.openminis.app.MainActivity >/dev/null; sleep 4; }
+  tap desc "对话" >/dev/null 2>&1 || true; sleep 1; }
 adb shell am force-stop $PKG; adb shell pm clear $PKG >/dev/null 2>&1 || true
 zlaunch 1 seed 15
 for th in 1:light 2:dark; do
@@ -72,13 +76,14 @@ for th in 1:light 2:dark; do
   zlaunch "$m" "$n" 14
   alive || { echo "::error::app not running (zh $n)"; fail=1; }
   zshot "$n-01-onboarding" 1
-  if tap desc "打开侧边栏"; then
-    zshot "$n-03-sidebar" 3
-    if tap desc "新对话"; then zshot "$n-02-chat" 3; else echo "::warning::zh new-chat not found ($n)"; fi
-  else echo "::warning::zh sidebar button not found ($n)"; fi
-  home
   tap desc "Bots" && zshot "$n-04-bots" 3 || echo "::warning::zh Bots tab not found ($n)"
   tap desc "设置" && zshot "$n-05-settings" 3 || echo "::warning::zh 设置 tab not found ($n)"
+  tap desc "对话" >/dev/null 2>&1 || true; sleep 2
+  if tap desc "打开侧边栏"; then
+    zshot "$n-03-sidebar" 3
+    if tap desc "新对话"; then zshot "$n-02-chat" 3; adb shell input keyevent KEYCODE_BACK; sleep 1; else echo "::warning::zh new-chat not found ($n)"; fi
+  else echo "::warning::zh sidebar button not found ($n)"; fi
+  home
   link vault;        zshot "$n-06-vault" 4;    home
   link gateway;      zshot "$n-07-gateway" 4;  home
   link sandbox;      zshot "$n-08-sandbox" 4;  home
