@@ -421,13 +421,14 @@ fun GatewayScreen(onBack: () -> Unit, onProvider: (String) -> Unit, onModelGroup
                     val (label, kind) = gatewayStatus(ctx, inst, s, now)
                     val models = config.modelEntries.count { it.providerInstanceId == inst.id && !it.isHidden }
                     val regionsDown = s.regionsDown.filterValues { it > now }.keys
+                    val defaultRegion = t("默认", "default")
                     val sub = buildString {
                         append(t("模型 ", "models ")).append(models)
                         append(t(" · 失败 ", " · failures ")).append(s.failures)
                         if (s.kind == GatewayNet.Kind.OK && s.latencyMs > 0) append(" · ").append(s.latencyMs).append(" ms")
                         s.lastCheck?.let { append("\n").append(it.take(90)) }
                         if (regionsDown.isNotEmpty()) append("\n").append(t("区域不可用：", "Region unavailable: "))
-                            .append(regionsDown.joinToString { if (it.isEmpty()) t("默认", "default") else "$it:" })
+                            .append(regionsDown.joinToString { if (it.isEmpty()) defaultRegion else "$it:" })
                         if (s.repair != GatewayHealth.Repair.NONE && !s.repairNote.isNullOrBlank()) append("\n").append(s.repairNote)
                         if (s.dead) append(t("\n需要重新登录或更换 Key", "\nSign in again or replace the key"))
                     }
