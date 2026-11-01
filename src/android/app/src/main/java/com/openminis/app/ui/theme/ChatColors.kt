@@ -153,6 +153,41 @@ val DarkChatPalette = ChatPalette(
     fabAccent = Color(0xFF504C42),
 )
 
+// [fork/mibot-v2] Chat colours for the Mibot design system: peach user
+// bubbles, brick-red accents, frosted tool capsules.
+val MibotLightChatPalette = LightChatPalette.copy(
+    background = Color(0xFFF2F4F7),
+    secondaryBg = Color(0xE6FFFFFF),
+    inputBg = Color(0xF2FFFFFF),
+    inputIconBg = Color(0xFFF4ECE8),
+    primaryText = Color(0xFF1C212C),
+    userBubble = Color(0xFFF8D9C8),
+    toolBg = Color(0xD9FFFFFF),
+    toolCapsuleBg = Color(0xD9FFFFFF),
+    sendButton = Color(0xFFB9503A),
+    link = Color(0xFFB9503A),
+    thinking = Color(0xFF3F729C),
+    toastBg = Color(0x2EB9503A),
+    sheetHeaderBg = Color(0xFFF8F9FB),
+    fabAccent = Color(0xFFB9503A),
+)
+
+val MibotDarkChatPalette = DarkChatPalette.copy(
+    background = Color(0xFF111521),
+    secondaryBg = Color(0xE61D2230),
+    inputBg = Color(0xF21D2230),
+    inputIconBg = Color(0xFF2A2F3D),
+    userBubble = Color(0xFF6B3A2C),
+    toolBg = Color(0xD91D2230),
+    toolCapsuleBg = Color(0xD91A1F2B),
+    sendButton = Color(0xFFEE8E70),
+    link = Color(0xFFEE8E70),
+    thinking = Color(0xFF9CC4E8),
+    toastBg = Color(0x2EEE8E70),
+    sheetHeaderBg = Color(0xFF242A38),
+    fabAccent = Color(0xFFC75F45),
+)
+
 val LocalChatPalette = compositionLocalOf { LightChatPalette }
 
 // Short accessor: ChatColors.primaryText instead of LocalChatPalette.current.primaryText

@@ -62,7 +62,7 @@ class DebugServer(
      * [T-android-debugserver-auth] Per-install token required from
      * non-loopback clients. Generated once, persisted in filesDir so the
      * developer can read it with:
-     *   adb shell run-as com.openminis.app cat files/debug_server_token
+     *   adb shell run-as ${com.openminis.app.BuildConfig.APPLICATION_ID} cat files/debug_server_token
      * Also logged at startup (logcat is adb-only — not readable remotely).
      */
     private val authToken: String by lazy {

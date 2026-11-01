@@ -33,11 +33,15 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.openminis.app"
+        // Fork rebrand: own applicationId so Mibot installs alongside the official
+        // Minis (com.openminis.app). `namespace` stays com.openminis.app, so R /
+        // BuildConfig / class names are unchanged; anything that needs the
+        // installed package must use context.packageName or BuildConfig.APPLICATION_ID.
+        applicationId = "com.dl1991.mibot"
         minSdk = 26
         targetSdk = 35
-        versionCode = 37
-        versionName = "1.15"
+        versionCode = 39
+        versionName = "1.17"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -63,7 +67,9 @@ android {
         // prerelease flag and cut a tag at its first '-') see them as version
         // 0 and never offer them. UPDATE_CHANNEL is the channel a fresh
         // install starts on; the user can switch to beta in About.
-        buildConfigField("String", "RELEASE_REPO", "\"OpenMinis/OpenMinis\"")
+        // Fork: point in-app update at this fork, not upstream (an upstream APK
+        // has a different applicationId and would install as a separate app).
+        buildConfigField("String", "RELEASE_REPO", "\"dl1991/OpenMinis\"")
         buildConfigField("String", "UPDATE_CHANNEL", "\"stable\"")
 
         ndk {
@@ -85,9 +91,30 @@ android {
         }
     }
 
+    // [fork/mibot-v3] One fixed signing key for every build (CI decodes it from
+    // the MIBOT_KEYSTORE_B64 Actions secret into MIBOT_KEYSTORE_FILE), so a new
+    // APK always installs over the previous one. Without the env vars (local
+    // builds) the stock debug key is used.
+    val mibotKeystore = System.getenv("MIBOT_KEYSTORE_FILE")?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (mibotKeystore != null) {
+            create("mibot") {
+                storeFile = mibotKeystore
+                storePassword = System.getenv("MIBOT_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("MIBOT_KEY_ALIAS") ?: "mibot"
+                keyPassword = System.getenv("MIBOT_KEY_PASSWORD") ?: System.getenv("MIBOT_KEYSTORE_PASSWORD")
+                storeType = "pkcs12"
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+    }
+    val mibotSigning = if (mibotKeystore != null) signingConfigs.getByName("mibot") else signingConfigs.getByName("debug")
+
     buildTypes {
         getByName("debug") {
             buildConfigField("boolean", "DEV_TOOLS", "true")
+            signingConfig = mibotSigning
         }
         // `perf`: the debug variant minus android:debuggable. ART refuses to
         // AOT-compile a debuggable app (`cmd package compile -m speed`
@@ -104,7 +131,7 @@ android {
             isProfileable = true
             matchingFallbacks += listOf("debug")
             buildConfigField("boolean", "DEV_TOOLS", "true")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = mibotSigning
         }
         release {
             // [OpenMinis#363] Produce native-debug-symbols.zip alongside the
@@ -126,7 +153,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = mibotSigning
         }
     }
 
@@ -172,6 +199,8 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        // [fork/mibot-v3] IMibotShell (background phone-control helper).
+        aidl = true
     }
 
     androidResources {
@@ -439,6 +468,15 @@ dependencies {
 
     // Kotlinx Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    // [fork/glass-ui] Haze: frosted-glass blur for the sidebar and the floating
+    // tab bar (RenderEffect on API 31+, translucent fallback tint below).
+    // 1.6.x is the line built against Kotlin 2.1 / Compose 1.8, matching this
+    // project's Kotlin 2.1.0 toolchain.
+    implementation("dev.chrisbanes.haze:haze:1.6.10")
+
+    // [fork/mibot-v4] Daily account check-in schedule.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     // Coil (image loading)
     implementation("io.coil-kt:coil-compose:2.7.0")

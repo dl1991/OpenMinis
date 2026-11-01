@@ -102,6 +102,9 @@ fun AddProviderScreen(
     var selectedVoiceTemplate by remember {
         mutableStateOf<com.openminis.app.data.model.VoiceProviderTemplate?>(null)
     }
+    // [fork/mibot-v2] Non-null when entered from a registry preset (免费可用 /
+    // 官方 API): shows the key link + free-tier note on the configure step.
+    var selectedPreset by remember { mutableStateOf<com.openminis.app.mibot.providers.ProviderPreset?>(null) }
 
     // Unified back handler: reuse each step's onBack so predictive-back gesture
     // and the top-bar arrow behave identically (go back to prior step, not exit).
@@ -111,6 +114,7 @@ fun AddProviderScreen(
             AddProviderStep.CHOOSE_CREDENTIAL -> {
                 step = AddProviderStep.CHOOSE_TYPE
                 selectedType = null
+                selectedPreset = null
             }
             AddProviderStep.CONFIGURE -> {
                 // Voice-template entry skipped the credential step entirely —
@@ -119,6 +123,7 @@ fun AddProviderScreen(
                     step = AddProviderStep.CHOOSE_TYPE
                     selectedType = null
                     selectedVoiceTemplate = null
+                    selectedPreset = null
                 } else {
                     val creds = availableCredentials(selectedType!!)
                     if (creds.size == 1) {
@@ -140,6 +145,7 @@ fun AddProviderScreen(
         AddProviderStep.CHOOSE_TYPE -> ChooseProviderScreen(
             onBack = handleBack,
             onSelect = { type ->
+                selectedPreset = null
                 selectedType = type
                 val creds = availableCredentials(type)
                 if (creds.size == 1) {
@@ -148,6 +154,21 @@ fun AddProviderScreen(
                     step = AddProviderStep.CONFIGURE
                 } else {
                     step = AddProviderStep.CHOOSE_CREDENTIAL
+                }
+            },
+            onSelectPreset = { preset ->
+                val type = preset.providerType
+                if (type == ProviderType.openRouter) {
+                    // OpenRouter keeps its own flow: API key or one-tap OAuth PKCE sign-in.
+                    selectedPreset = preset
+                    selectedType = type
+                    step = AddProviderStep.CHOOSE_CREDENTIAL
+                } else if (type != null) {
+                    selectedPreset = preset
+                    selectedVoiceTemplate = preset.asTemplate()
+                    selectedType = type
+                    selectedCredential = ProviderCredential.apiKey
+                    step = AddProviderStep.CONFIGURE
                 }
             },
             onSelectVoiceTemplate = { template ->
@@ -172,6 +193,7 @@ fun AddProviderScreen(
             credentialType = selectedCredential!!,
             providerRepository = providerRepository,
             voiceTemplate = selectedVoiceTemplate,
+            preset = selectedPreset,
             onBack = handleBack,
             onSaved = onSaved,
         )
@@ -251,11 +273,14 @@ private fun ChooseProviderScreen(
     onBack: () -> Unit,
     onSelect: (ProviderType) -> Unit,
     onSelectVoiceTemplate: (com.openminis.app.data.model.VoiceProviderTemplate) -> Unit = {},
+    onSelectPreset: (com.openminis.app.mibot.providers.ProviderPreset) -> Unit = {},
 ) {
     SettingsScaffold(
         title = stringResource(R.string.provider_list_add_provider),
         onBack = onBack,
     ) {
+        // [fork/mibot-v2] Registry presets first, grouped like the quick-connect list.
+        com.openminis.app.mibot.providers.PresetSections(onSelectPreset)
         // [T-android-copilot-row-consent-only] Copilot is a plain row here, like
         // every other OAuth provider (xAI, Kimi Code): tap it and the sign-in
         // flow opens on its risk notice, which must be accepted before any
@@ -274,7 +299,7 @@ private fun ChooseProviderScreen(
         val context = LocalContext.current
         val offeredTypes = providerDisplayOrder + ProviderType.githubCopilot
         SettingsSection(
-            header = stringResource(R.string.add_provider_choose_provider),
+            header = com.openminis.app.mibot.design.t("自定义（按协议接入）", "Custom (by protocol)"),
             footer = stringResource(R.string.add_provider_you_can_add_multiple_instances_of_the_sa),
         ) {
             offeredTypes.forEachIndexed { index, type ->
@@ -436,6 +461,7 @@ private fun ConfigureProviderScreen(
     credentialType: ProviderCredential,
     providerRepository: ProviderRepository,
     voiceTemplate: com.openminis.app.data.model.VoiceProviderTemplate? = null,
+    preset: com.openminis.app.mibot.providers.ProviderPreset? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -477,6 +503,7 @@ private fun ConfigureProviderScreen(
         title = stringResource(R.string.add_provider_configure_provider, providerType.displayName),
         onBack = onBack,
     ) {
+        if (preset != null) com.openminis.app.mibot.providers.PresetInfoCard(preset)
         // Identity section — Label only. Each provider auto-suggests a
         // unique label so users don't have to type one for the common case.
         SettingsSection(

@@ -212,7 +212,7 @@ object DebugMethodRegistry {
                 ParamSpec("categories", "array", required = false, description = "Category keys; default = all in the package."),
             ),
             returns = "{backupId, sourcePlatform, integrityChecked, integrityFailed, warnings, categories:[{category, imported, updated, skipped, unreadable, failed}]}",
-            example = JSONObject().put("path", "/data/user/0/com.openminis.app/files/debug-backup/x.minisbak"),
+            example = JSONObject().put("path", "/data/user/0/${com.openminis.app.BuildConfig.APPLICATION_ID}/files/debug-backup/x.minisbak"),
         ),
         MethodSpec(
             name = "debug.backup.upload",

@@ -571,6 +571,8 @@ class MinisApp : Application(), ImageLoaderFactory {
         }
         com.openminis.app.agent.jobs.AgentCallbackLabels.install(this)
         providerRepository = ProviderRepository(this)
+        // [fork/mibot-v4] Restore AI-gateway health (routing skips dead accounts / regions).
+        runCatching { com.openminis.app.mibot.gateway.GatewayHealth.init(this) }
         // [T-provider-quota] Upstream balance / quota cache; refreshes only while
         // the app is in the foreground.
         com.openminis.app.quota.QuotaStore.start(this, providerRepository)
@@ -755,6 +757,10 @@ class MinisApp : Application(), ImageLoaderFactory {
         NativeOffloadServer.register("android-open", OpenOffloadHandler(this))
         NativeOffloadServer.register("android-photos", PhotosOffloadHandler(this))
         NativeOffloadServer.register("android-player", PlayerOffloadHandler())
+        // [fork/mibot-v2] Account vault CLI offload.
+        NativeOffloadServer.register("vault", com.openminis.app.mibot.vault.VaultOffloadHandler(this))
+        // [fork/mibot-v3] `mibot-vd`: background phone control from the sandbox.
+        NativeOffloadServer.register("mibot-vd", com.openminis.app.mibot.phone.VdOffloadHandler(this))
         NativeOffloadServer.register("android-speak", SpeakOffloadHandler(this))
         NativeOffloadServer.register("android-speech", SpeechOffloadHandler(this))
         NativeOffloadServer.register("android-weather", WeatherOffloadHandler(this))
@@ -800,6 +806,9 @@ class MinisApp : Application(), ImageLoaderFactory {
         // up the binder lifecycle listeners + StateFlow.
         NativeOffloadServer.register("android-shizuku-cli", ShizukuOffloadHandler(this))
         com.openminis.app.offload.ShizukuManager.init(this)
+        // [fork/mibot-v3] Background phone control: watchdog that reconnects the
+        // paired Wireless-Debugging helper (no-op until the user pairs).
+        runCatching { com.openminis.app.mibot.phone.MibotPhone.get(this).start() }
 
         // T-android-minis-debug-cli: shell-side CLI wrapper around the in-app
         // DebugServer (127.0.0.1:5321) JSON-RPC. DEBUG-only — Release builds

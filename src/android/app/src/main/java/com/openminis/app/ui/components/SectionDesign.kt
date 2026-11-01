@@ -86,7 +86,9 @@ object SectionDesign {
      *  `surfaceContainerLow` here gives us the card color iOS Settings expects. */
     @Composable
     @ReadOnlyComposable
-    fun cardColor(): Color = MaterialTheme.colorScheme.surfaceContainerLow
+    fun cardColor(): Color =
+        if (com.openminis.app.ui.theme.LocalMibotActive.current) com.openminis.app.mibot.design.MibotTokens.card()
+        else MaterialTheme.colorScheme.surfaceContainerLow
 
     /** Section background (the gray behind the cards) — match iOS systemGroupedBackground.
      *  Pairs with [cardColor]: this token is the dimmer page-level surface
@@ -117,11 +119,12 @@ fun SectionHeader(
     text: String,
     modifier: Modifier = Modifier,
 ) {
+    val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
     Text(
         text = text,
-        style = MaterialTheme.typography.titleMedium,
+        style = if (mibotUi) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurface,
+        color = if (mibotUi) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
         modifier = modifier.padding(
             start = SectionDesign.ScreenHorizontalPadding,
             end = SectionDesign.ScreenHorizontalPadding,
@@ -162,9 +165,12 @@ fun SectionCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
     Surface(
         color = SectionDesign.cardColor(),
-        shape = SectionDesign.CardShape,
+        shape = if (mibotUi) com.openminis.app.mibot.design.MibotRadius.CardShape else SectionDesign.CardShape,
+        border = if (mibotUi) androidx.compose.foundation.BorderStroke(1.dp, com.openminis.app.mibot.design.MibotTokens.hairline()) else null,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = SectionDesign.ScreenHorizontalPadding),

@@ -123,6 +123,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -636,6 +638,12 @@ fun SessionListScreen(
      * prepends the same placeholder in split mode.
      */
     draftPlaceholderId: String? = null,
+    /**
+     * [fork/glass-ui] When non-null the glass UI is on: the leading toolbar
+     * button opens the recent-list drawer instead of Settings (Settings is a
+     * tab), and the screen is transparent over the backdrop.
+     */
+    onOpenDrawer: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     // T46: hoist VM ownership to the NavBackStackEntry's ViewModelStore so
@@ -968,8 +976,18 @@ fun SessionListScreen(
         .homeBadgeCount(scheduledTaskCount, showScheduledBadge)
 
     Scaffold(
+        // [fork/glass-ui] Transparent over the backdrop when glass is on.
+        containerColor = if (onOpenDrawer != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
+                colors = if (onOpenDrawer != null) {
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
+                    )
+                } else {
+                    TopAppBarDefaults.topAppBarColors()
+                },
                 title = {
                     if (isSelecting) {
                         Text(
@@ -1004,14 +1022,18 @@ fun SessionListScreen(
                         val updateChannel by com.openminis.app.data.UpdateStateStore.channel.collectAsState()
                         // [T-android-badge-clip] Badge outside the button's clip.
                         com.openminis.app.ui.components.BadgedIconButton(
-                            onClick = onSettingsClick,
+                            onClick = onOpenDrawer ?: onSettingsClick,
                             badge = if (com.openminis.app.data.UpdatePolicy.hasHomeBadge(updateBadge, updateChannel)) {
                                 { Badge() }
                             } else {
                                 null
                             },
                         ) {
-                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.sessionlist_settings))
+                            if (onOpenDrawer != null) {
+                                Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.glass_open_sidebar))
+                            } else {
+                                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.sessionlist_settings))
+                            }
                         }
                     }
                 },
@@ -1952,10 +1974,14 @@ private fun DualFabRow(
                                 onHorizontalDrag = { _, dragAmount -> searchDragX += dragAmount },
                             )
                         }
-                        .shadow(6.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.15f)),
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp),
+                        // [fork/mibot-v2] Shadow outside, then clip so the
+                        // translucent container and ripple stay round (no grey
+                        // square behind the button), matching the chat FAB.
+                        .shadow(6.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.15f))
+                        .clip(CircleShape),
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = if (com.openminis.app.ui.theme.LocalMibotActive.current) 0.dp else 4.dp, pressedElevation = if (com.openminis.app.ui.theme.LocalMibotActive.current) 0.dp else 6.dp),
                 ) {
-                    Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.sessionlist_search_action), tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.sessionlist_search_action), tint = ChatColors.primaryText, modifier = Modifier.size(24.dp))
                 }
             }
         }

@@ -13,6 +13,7 @@ import com.openminis.app.ui.navigation.Routes
  *   minis://session/<id>                        → open specific session
  *   minis://settings                            → Settings home
  *   minis://settings/providers                  → Provider list
+ *   minis://settings/add-provider               → Add-provider preset picker
  *   minis://settings/providers/<instanceId>     → Provider detail
  *   minis://settings/model-groups               → Model Groups (incl. Agent Loop section)
  *   minis://settings/model-groups/<groupId>     → Model Group detail
@@ -166,6 +167,8 @@ object DeepLinkHandler {
         val arg = segments.getOrNull(1)?.takeIf { it.isNotBlank() }
 
         return when (head) {
+            // [fork/mibot-v2] Add-provider preset picker (CI screenshots, agent links).
+            "add-provider", "add_provider" -> DeepLinkAction.OpenSettingsScreen(Routes.ADD_PROVIDER)
             "providers" ->
                 if (arg != null) DeepLinkAction.OpenSettingsScreen(Routes.providerDetail(arg))
                 else DeepLinkAction.OpenSettingsScreen(Routes.PROVIDER_LIST)
@@ -195,6 +198,18 @@ object DeepLinkHandler {
             }
             "appearance" -> DeepLinkAction.OpenSettingsScreen(Routes.APPEARANCE)
             "background" -> DeepLinkAction.OpenSettingsScreen(Routes.BACKGROUND)
+            // [fork/glass-ui] Backdrop & Glass settings.
+            "backdrop", "glass" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.ui.glass.GlassRoutes.BACKDROP)
+            // [fork/mibot-v2] Mibot pages.
+            "vault", "accounts" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.LIST)
+            // [fork/mibot-v4] Auto-discover flow, and a page per settings screen for CI screenshots.
+            "vault-discover", "discover" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER)
+            "vault-add", "add-account" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.edit("new"))
+            "rootfs" -> DeepLinkAction.OpenSettingsScreen(Routes.ROOTFS_MANAGEMENT)
+            "gateway" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY)
+            "sandbox" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX)
+            "virtual-display", "vd", "background-control" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.phone.VdRoutes.PAGE)
+            "diagnostics" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.settings.DiagnosticsRoutes.DIAGNOSTICS)
             "about" -> DeepLinkAction.OpenSettingsScreen(Routes.ABOUT)
             "network" -> DeepLinkAction.OpenSettingsScreen(Routes.NETWORK)
             // [FEAT-261021-04] Same paths and aliases as iOS DeepLinkRouter.

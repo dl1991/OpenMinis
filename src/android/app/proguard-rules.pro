@@ -26,3 +26,8 @@
 # NOTE FOR VERIFICATION: debug builds don't minify, so this bug is invisible
 # there. Any change here must be checked against an assembleRelease APK.
 -keep class io.codeconcept.realtimecutvadlibrary.** { *; }
+
+# [fork/mibot-v3] Background phone-control helper: started by class name via
+# app_process (CLASSPATH=base.apk ... com.openminis.app.mibot.phone.HelperMain),
+# and reaches hidden framework APIs by reflection.
+-keep class com.openminis.app.mibot.phone.** { *; }

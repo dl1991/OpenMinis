@@ -42,6 +42,10 @@
          can be issued without falling through to the broader settings list. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- [fork/mibot-v3] Background phone control: FGS while controlling; WRITE_SECURE_SETTINGS
+         is only ever granted by the user through the paired helper / Shizuku (pm grant). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions" />
     <!-- [T-android-dynamic-island] Android 16 (Baklava) Live Updates: lets the
          ongoing agent-status notification be promoted to the always-visible
          status-chip / "dynamic island" surface. Non-runtime (install-time)
@@ -109,6 +113,60 @@
     <!-- Package visibility for speech recognition services + Custom Tabs
          (Android 11+ scoped queries). -->
     <queries>
+        <!-- [fork/mibot-v4] Vault auto-discovery: known service apps (installed? only). -->
+        <package android:name="ai.mistral.chat" />
+        <package android:name="ai.perplexity.app.android" />
+        <package android:name="ai.x.grok" />
+        <package android:name="com.Slack" />
+        <package android:name="com.alibaba.aliyun" />
+        <package android:name="com.alibaba.android.rimet" />
+        <package android:name="com.aliyun.tongyi" />
+        <package android:name="com.anthropic.claude" />
+        <package android:name="com.binance.dev" />
+        <package android:name="com.cloudflare.onedotonedotonedotone" />
+        <package android:name="com.coinbase.android" />
+        <package android:name="com.deepseek.chat" />
+        <package android:name="com.discord" />
+        <package android:name="com.dropbox.android" />
+        <package android:name="com.eg.android.AlipayGphone" />
+        <package android:name="com.formagrid.airtable" />
+        <package android:name="com.github.android" />
+        <package android:name="com.google.android.apps.bard" />
+        <package android:name="com.google.android.apps.docs" />
+        <package android:name="com.google.android.calendar" />
+        <package android:name="com.google.android.gm" />
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.larus.nova" />
+        <package android:name="com.linear" />
+        <package android:name="com.microsoft.office.outlook" />
+        <package android:name="com.minimax.ai" />
+        <package android:name="com.moonshot.kimichat" />
+        <package android:name="com.netease.mail" />
+        <package android:name="com.okinc.okex.gp" />
+        <package android:name="com.openai.chatgpt" />
+        <package android:name="com.paypal.android.p2pmobile" />
+        <package android:name="com.sina.weibo" />
+        <package android:name="com.ss.android.coze" />
+        <package android:name="com.ss.android.lark" />
+        <package android:name="com.ss.android.ugc.aweme" />
+        <package android:name="com.stripe.android.dashboard" />
+        <package android:name="com.tencent.androidqqmail" />
+        <package android:name="com.tencent.hunyuan.app.chat" />
+        <package android:name="com.tencent.mm" />
+        <package android:name="com.tencent.mobileqq" />
+        <package android:name="com.tencent.qcloud.qcloud" />
+        <package android:name="com.todoist" />
+        <package android:name="com.twitter.android" />
+        <package android:name="com.xingin.xhs" />
+        <package android:name="com.zhipuai.qingyan" />
+        <package android:name="io.elevenlabs.readerapp" />
+        <package android:name="jp.naver.line.android" />
+        <package android:name="notion.id" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="org.telegram.messenger.web" />
+        <package android:name="tech.butterfly.app" />
+        <package android:name="tv.danmaku.bili" />
         <intent>
             <action android:name="android.speech.RecognitionService" />
         </intent>
@@ -610,5 +668,25 @@
                 android:resource="@xml/minis_accessibility_service" />
         </service>
 
+        <!-- [fork/mibot-v3] Background phone control (adapted from Mika, Apache-2.0).
+             The helper (shell uid) hands its Binder over this provider; INTERACT_ACROSS_USERS_FULL
+             keeps normal apps out, HelperHub.offer checks uid/pid/APK/one-time nonce. -->
+        <provider
+            android:name="com.openminis.app.mibot.phone.HandoffProvider"
+            android:authorities="${applicationId}.mibothelper"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+        <receiver
+            android:name="com.openminis.app.mibot.phone.PairingCodeReceiver"
+            android:exported="false" />
+        <service
+            android:name="com.openminis.app.mibot.phone.VdForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="AI agent operating apps on a hidden virtual display, started and stoppable by the user" />
+        </service>
     </application>
 </manifest>

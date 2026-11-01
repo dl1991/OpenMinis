@@ -1164,6 +1164,11 @@ class ProviderRepository(private val context: Context) {
             if (!instance.isEnabled) return@mapNotNull null
             if (!hasAnyCredential(instance)) return@mapNotNull null
             entry
+        }.let { list ->
+            // [fork/mibot-v2] AI gateway: skip accounts cooling down after a
+            // failure or marked dead, unless that would leave nothing.
+            val healthy = list.filter { com.openminis.app.mibot.gateway.GatewayHealth.isEntryUsable(it.providerInstanceId, it.model.id) }
+            if (healthy.isEmpty()) list else healthy
         }
     }
 

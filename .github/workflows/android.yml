@@ -104,8 +104,26 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # [fork/mibot-v3] One fixed signing key for every build (stored as an
+      # Actions secret, never in git) so new APKs install over old ones.
+      - name: Signing keystore
+        env:
+          KS: ${{ secrets.MIBOT_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/mibot.p12"
+            echo "MIBOT_KEYSTORE_FILE=$RUNNER_TEMP/mibot.p12" >> "$GITHUB_ENV"
+            echo "fixed signing key: yes"
+          else
+            echo "::warning::MIBOT_KEYSTORE_B64 not set; using the runner's debug key"
+          fi
+
       - name: assembleDebug
         working-directory: src/android
+        env:
+          MIBOT_KEYSTORE_PASSWORD: ${{ secrets.MIBOT_KEYSTORE_PASSWORD }}
+          MIBOT_KEY_ALIAS: ${{ secrets.MIBOT_KEY_ALIAS }}
+          MIBOT_KEY_PASSWORD: ${{ secrets.MIBOT_KEY_PASSWORD }}
         run: ./gradlew --no-daemon :app:assembleDebug -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8"
 
       - name: Collect APK
@@ -113,20 +131,30 @@ jobs:
           mkdir -p out
           cp $(find src/android/app/build/outputs/apk -name '*.apk' | head -n1) out/minis-debug.apk
           unzip -l out/minis-debug.apk | grep -E 'libproot|libgojni' || true
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs out/minis-debug.apk | tee out/signing.txt || true
           ls -la out
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: minis-debug-apk
-          path: out/minis-debug.apk
+          path: |
+            out/minis-debug.apk
+            out/signing.txt
           retention-days: 14
 
   smoke:
-    name: Emulator smoke test + screenshots
+    name: Emulator smoke test (API ${{ matrix.api }})
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # The app ships arm64-v8a only. x86_64 Google APIs images with
+        # ARM->x86 native-bridge translation: API 30 has it; 33's image does
+        # not (INSTALL_FAILED_NO_MATCHING_ABIS). 31 is tried for real blur.
+        api: [30, 31]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -143,12 +171,10 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # The app ships arm64-v8a only; x86_64 Google APIs images (API 30+)
-      # carry ARM->x86 native-bridge translation, so the APK installs and runs.
       - name: Run emulator + smoke script
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 33
+          api-level: ${{ matrix.api }}
           target: google_apis
           arch: x86_64
           profile: pixel_6
@@ -162,6 +188,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-screenshots
+          name: smoke-screenshots-api${{ matrix.api }}
           path: screens/
           retention-days: 14

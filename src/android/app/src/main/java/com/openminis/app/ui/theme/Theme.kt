@@ -156,20 +156,119 @@ private val MinisShapes = Shapes(
 fun MinisTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     fontScale: Float = 1f,
+    // [fork/mibot-v2] Mibot design system: translucent surfaces over the
+    // shared sky backdrop, brick-red accent. False = the stock palette.
+    mibot: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    val typography = scaledTypography(fontScale)
-    val chatPalette = if (darkTheme) DarkChatPalette else LightChatPalette
+    val colorScheme = when {
+        mibot && darkTheme -> MibotDarkColorScheme
+        mibot -> MibotLightColorScheme
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+    val typography = if (mibot) mibotTypography(fontScale) else scaledTypography(fontScale)
+    val chatPalette = when {
+        mibot && darkTheme -> MibotDarkChatPalette
+        mibot -> MibotLightChatPalette
+        darkTheme -> DarkChatPalette
+        else -> LightChatPalette
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,
         shapes = MinisShapes,
         typography = typography,
     ) {
-        CompositionLocalProvider(LocalChatPalette provides chatPalette, content = content)
+        // [fork/mibot-v4] Compact everywhere: the system font scale is still
+        // honoured, but capped at 1.15x on Mibot screens so very large system
+        // settings don't blow every page up to 18-20sp body text.
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val capped = if (mibot && density.fontScale > MIBOT_MAX_FONT_SCALE)
+            androidx.compose.ui.unit.Density(density.density, MIBOT_MAX_FONT_SCALE) else density
+        CompositionLocalProvider(
+            LocalChatPalette provides chatPalette,
+            LocalMibotActive provides mibot,
+            LocalMibotDark provides darkTheme,
+            androidx.compose.ui.platform.LocalDensity provides capped,
+            content = content,
+        )
     }
 }
+
+/** [fork/mibot-v4] Upper bound for the system font scale on Mibot screens. */
+const val MIBOT_MAX_FONT_SCALE = 1.15f
+
+/** [fork/mibot-v2] True while the Mibot design system (shared backdrop) is active. */
+val LocalMibotActive = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+/** [fork/mibot-v2] Whether the app is currently rendering its dark variant. */
+val LocalMibotDark = androidx.compose.runtime.staticCompositionLocalOf { false }
+
+// [fork/mibot-v2] Mibot palettes. `background` is transparent so every stock
+// Scaffold shows the shared backdrop; cards/sheets are frosted (translucent)
+// and dialogs stay opaque for legibility.
+val MibotLightColorScheme = lightColorScheme(
+    primary = Color(0xFFB9503A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFF7DCD0),
+    onPrimaryContainer = Color(0xFF4A1D12),
+    secondary = Color(0xFF7D5A4E),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFF1E2DA),
+    onSecondaryContainer = Color(0xFF2E1810),
+    tertiary = Color(0xFF3F729C),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFD6E6F4),
+    onTertiaryContainer = Color(0xFF0E2A40),
+    background = Color.Transparent,
+    onBackground = Color(0xFF1C212C),
+    surface = Color(0x8CFFFFFF),
+    onSurface = Color(0xFF1C212C),
+    surfaceVariant = Color(0xD9FFFFFF),
+    onSurfaceVariant = Color(0xFF545B6A),
+    surfaceContainerLowest = Color(0x99FFFFFF),
+    surfaceContainerLow = Color(0xDEFFFFFF),
+    surfaceContainer = Color(0xEBFBFCFE),
+    surfaceContainerHigh = Color(0xF5F8F9FB),
+    surfaceContainerHighest = Color(0xFFF1F3F7),
+    outline = Color(0xFFA3AAB8),
+    outlineVariant = Color(0x33707A8C),
+    inverseSurface = Color(0xFF2A2F3A),
+    inverseOnSurface = Color(0xFFF1F3F7),
+    error = Color(0xFFC0392B),
+)
+
+val MibotDarkColorScheme = darkColorScheme(
+    primary = Color(0xFFEE8E70),
+    onPrimary = Color(0xFF3A1408),
+    primaryContainer = Color(0xFF5C2B1F),
+    onPrimaryContainer = Color(0xFFFFDBCF),
+    secondary = Color(0xFFD8B9AD),
+    onSecondary = Color(0xFF3A2219),
+    secondaryContainer = Color(0xFF3B2E2C),
+    onSecondaryContainer = Color(0xFFF5DED5),
+    tertiary = Color(0xFF9CC4E8),
+    onTertiary = Color(0xFF0E2A40),
+    tertiaryContainer = Color(0xFF26405A),
+    onTertiaryContainer = Color(0xFFD6E6F4),
+    background = Color.Transparent,
+    onBackground = Color(0xFFECEFF6),
+    surface = Color(0x8C10141E),
+    onSurface = Color(0xFFECEFF6),
+    surfaceVariant = Color(0xCC1A1F2C),
+    onSurfaceVariant = Color(0xFFAAB1C3),
+    surfaceContainerLowest = Color(0x990C0F17),
+    surfaceContainerLow = Color(0xD91A1F2B),
+    surfaceContainer = Color(0xE61D2230),
+    surfaceContainerHigh = Color(0xF2242A38),
+    surfaceContainerHighest = Color(0xFF2C3242),
+    outline = Color(0xFF8E97AB),
+    outlineVariant = Color(0x33FFFFFF),
+    inverseSurface = Color(0xFFECEFF6),
+    inverseOnSurface = Color(0xFF1A1F2B),
+    error = Color(0xFFFF8A80),
+)
 
 /**
  * [T-multi-select-share] Re-themes a subtree light or dark regardless of the app's
@@ -208,6 +307,40 @@ private fun TextStyle.scale(factor: Float): TextStyle =
  */
 private fun TextStyle.bidi(): TextStyle =
     copy(textDirection = TextDirection.Content, textAlign = TextAlign.Left)
+
+/**
+ * [fork/mibot-v3] Compact Mibot type scale (see MibotType): body 14–14.5sp,
+ * secondary 12–12.5sp, titles 15–18sp, headlines 20–24sp. One family (system
+ * sans → Roboto / Noto Sans CJK SC), weights 400/500/600. The user's font-size
+ * setting still scales it.
+ */
+private fun mibotTypography(factor: Float): Typography {
+    val base = Typography()
+    fun TextStyle.m(size: Float, line: Float, weight: androidx.compose.ui.text.font.FontWeight) = copy(
+        fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+        fontSize = size.sp, lineHeight = line.sp, fontWeight = weight, letterSpacing = 0.sp,
+    ).scale(factor).bidi()
+    val n = androidx.compose.ui.text.font.FontWeight.Normal
+    val md = androidx.compose.ui.text.font.FontWeight.Medium
+    val sb = androidx.compose.ui.text.font.FontWeight.SemiBold
+    return Typography(
+        displayLarge = base.displayLarge.m(34f, 40f, n),
+        displayMedium = base.displayMedium.m(30f, 36f, n),
+        displaySmall = base.displaySmall.m(26f, 32f, n),
+        headlineLarge = base.headlineLarge.m(24f, 30f, sb),
+        headlineMedium = base.headlineMedium.m(22f, 28f, sb),
+        headlineSmall = base.headlineSmall.m(20f, 26f, sb),
+        titleLarge = base.titleLarge.m(17f, 23f, sb),
+        titleMedium = base.titleMedium.m(14.5f, 20f, md),
+        titleSmall = base.titleSmall.m(13.5f, 19f, md),
+        bodyLarge = base.bodyLarge.m(14f, 20f, n),
+        bodyMedium = base.bodyMedium.m(14f, 20f, n),
+        bodySmall = base.bodySmall.m(12f, 17f, n),
+        labelLarge = base.labelLarge.m(13.5f, 18f, md),
+        labelMedium = base.labelMedium.m(12f, 16f, md),
+        labelSmall = base.labelSmall.m(11f, 15f, md),
+    )
+}
 
 private fun scaledTypography(factor: Float): Typography {
     val base = Typography()

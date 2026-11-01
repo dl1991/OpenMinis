@@ -570,6 +570,11 @@ private fun Modifier.widthIfShort(): Modifier = this
 
 @Composable
 private fun CircleIconBadge(icon: ImageVector, tint: Color) {
+    // [fork/mibot-v4] Muted line icon instead of a coloured disc on Mibot screens.
+    if (com.openminis.app.ui.theme.LocalMibotActive.current) {
+        com.openminis.app.mibot.design.IconChip(icon, tint)
+        return
+    }
     Box(
         modifier = Modifier
             .size(26.dp)

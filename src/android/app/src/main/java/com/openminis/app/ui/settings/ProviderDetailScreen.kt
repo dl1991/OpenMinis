@@ -59,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +73,7 @@ import com.openminis.app.logging.AppLogger
 import com.openminis.app.ui.components.MinisAlertDialog
 import com.openminis.app.ui.util.bringIntoViewOnFocus
 import com.openminis.app.R
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import com.openminis.app.ui.components.MinisButton
 import com.openminis.app.ui.components.MinisOutlinedButton
@@ -171,7 +173,33 @@ fun ProviderDetailScreen(
     // in the main list, dimmed, so a provider with many hidden ones buried the
     // models in use. They now live in a collapsible group at the bottom, the
     // same split as iOS ProviderInstanceDetailView.
-    val (visibleEntries, hiddenEntries) = entries.partition { !it.isHidden }
+    val (allVisibleEntries, hiddenEntries) = entries.partition { !it.isHidden }
+    // [fork/mibot-v4] Free-tier presets list only their free models unless
+    // "显示付费模型" is on (off by default); every model can be test-pinged.
+    val freeRule = com.openminis.app.mibot.providers.FreeModels.ruleFor(instance)
+    var showPaid by remember(instanceId) { mutableStateOf(com.openminis.app.mibot.providers.FreeModels.showPaid(detailContext, instanceId)) }
+    val paidEntries = if (freeRule != null) allVisibleEntries.filter { !com.openminis.app.mibot.providers.FreeModels.isFree(freeRule, it.model.id) } else emptyList()
+    val visibleEntries = if (freeRule != null && !showPaid) allVisibleEntries.filter { it !in paidEntries } else allVisibleEntries
+    val testResults by com.openminis.app.mibot.providers.ModelTester.results.collectAsState()
+    var testingIds by remember(instanceId) { mutableStateOf(setOf<String>()) }
+    var testingAll by remember(instanceId) { mutableStateOf(false) }
+    var connTesting by remember(instanceId) { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            com.openminis.app.mibot.providers.ModelTester.ensureLoaded(detailContext)
+            com.openminis.app.mibot.gateway.GatewayHealth.init(detailContext)
+        }
+    }
+    @Suppress("UNUSED_VARIABLE") val gatewayVersion by com.openminis.app.mibot.gateway.GatewayHealth.version.collectAsState()
+    val testOne: (String) -> Unit = { modelId ->
+        if (modelId !in testingIds) {
+            testingIds = testingIds + modelId
+            scope.launch {
+                try { com.openminis.app.mibot.providers.ModelTester.test(detailContext, providerRepository, instance, modelId) }
+                finally { testingIds = testingIds - modelId }
+            }
+        }
+    }
     var hiddenExpanded by remember(instanceId) { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
     // [T-codex-dynamic-discovery GH#319] Set when the Codex discovery endpoint
@@ -656,6 +684,79 @@ fun ProviderDetailScreen(
                 showDivider = entries.isNotEmpty() || true,
             )
 
+            // [fork/mibot-v4] Connection test + 全部测试 + paid-model toggle.
+            run {
+                val gh = com.openminis.app.mibot.gateway.GatewayHealth.state(instance.id)
+                val (connLabel, connKind) = com.openminis.app.mibot.gateway.gatewayStatus(detailContext, instance, gh, System.currentTimeMillis())
+                SettingsRow(
+                    title = com.openminis.app.mibot.design.t("连接", "Connection"),
+                    subtitle = (gh.lastCheck ?: com.openminis.app.mibot.design.t("尚未测试", "Not tested yet")).take(90),
+                    onClick = null,
+                    showChevron = false,
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            com.openminis.app.mibot.design.StatusChip(connLabel, connKind)
+                            ModelTestPill(
+                                label = if (connTesting) "…" else com.openminis.app.mibot.design.t("测试", "Test"),
+                                enabled = !connTesting,
+                            ) {
+                                connTesting = true
+                                scope.launch {
+                                    try { com.openminis.app.mibot.gateway.GatewayProbe.check(detailContext, providerRepository, instance) }
+                                    finally { connTesting = false }
+                                }
+                            }
+                        }
+                    },
+                )
+                val tested = visibleEntries.mapNotNull { testResults[com.openminis.app.mibot.providers.ModelTester.key(instance.id, it.model.id)] }
+                val okN = tested.count { it.ok }
+                val badN = tested.size - okN
+                SettingsRow(
+                    title = if (testingAll) com.openminis.app.mibot.design.t("测试中…", "Testing…") else com.openminis.app.mibot.design.t("全部测试", "Test all"),
+                    subtitle = com.openminis.app.mibot.design.t("可用 ", "OK ") + okN + com.openminis.app.mibot.design.t(" · 失败 ", " · failed ") + badN +
+                        com.openminis.app.mibot.design.t(" · 未测 ", " · untested ") + (visibleEntries.size - tested.size),
+                    onClick = if (testingAll || visibleEntries.isEmpty()) null else {
+                        {
+                            testingAll = true
+                            scope.launch {
+                                try {
+                                    val ids = visibleEntries.map { it.model.id }
+                                    // Three at a time keeps free tiers under their rate limits.
+                                    ids.chunked(3).forEach { chunk ->
+                                        testingIds = testingIds + chunk
+                                        chunk.map { id ->
+                                            async {
+                                                try { com.openminis.app.mibot.providers.ModelTester.test(detailContext, providerRepository, instance, id) }
+                                                finally { testingIds = testingIds - id }
+                                            }
+                                        }.forEach { it.await() }
+                                    }
+                                } finally { testingAll = false }
+                            }
+                        }
+                    },
+                    showChevron = false,
+                    trailing = {
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    },
+                )
+                if (freeRule != null) {
+                    SettingsRow(
+                        title = com.openminis.app.mibot.design.t("显示付费模型", "Show paid models"),
+                        subtitle = com.openminis.app.mibot.design.t("免费预设默认只列免费模型 · 已隐藏 ", "Free presets list free models only · hidden ") + paidEntries.size,
+                        onClick = null,
+                        showChevron = false,
+                        trailing = {
+                            Switch(checked = showPaid, onCheckedChange = {
+                                showPaid = it
+                                com.openminis.app.mibot.providers.FreeModels.setShowPaid(detailContext, instance.id, it)
+                            })
+                        },
+                    )
+                }
+            }
+
             // One row for both lists, so a hidden row behaves exactly like a
             // visible one apart from its dimming and menu label.
             val modelRow: @Composable (com.openminis.app.data.model.ModelEntry, Boolean) -> Unit = { entry, showRowDivider ->
@@ -710,7 +811,13 @@ fun ProviderDetailScreen(
                         // [T-android-hidden-models-group] No " • Hidden"
                         // suffix: a hidden row now sits under the Hidden
                         // models group, which already says so.
-                        subtitle = entry.model.id,
+                        subtitle = buildString {
+                            append(entry.model.id)
+                            compactTokens(entry.model.contextWindow)?.let { append(" · ").append(it) }
+                            testResults[com.openminis.app.mibot.providers.ModelTester.key(instance.id, entry.model.id)]?.let { r ->
+                                append("\n").append(if (r.ok) "✓ ${r.latencyMs} ms" else "✗ ${r.reason}")
+                            }
+                        },
                         // onClick = null so SettingsRow doesn't add a second
                         // clickable that would swallow the long-press. The
                         // wrapping Box owns both gestures.
@@ -726,12 +833,34 @@ fun ProviderDetailScreen(
                         // previously the chevron slid left/right per row and the
                         // column looked ragged. Icons right-align within the slot.
                         trailing = {
-                            Box(
-                                modifier = Modifier.width(72.dp),
-                                contentAlignment = Alignment.CenterEnd,
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val r = testResults[com.openminis.app.mibot.providers.ModelTester.key(instance.id, entry.model.id)]
+                                val testing = entry.model.id in testingIds
+                                Box(
+                                    Modifier
+                                        .size(8.dp)
+                                        .background(
+                                            when {
+                                                testing -> MaterialTheme.colorScheme.primary
+                                                r == null -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                                r.ok -> Color(0xFF34C759)
+                                                else -> MaterialTheme.colorScheme.error
+                                            },
+                                            CircleShape,
+                                        ),
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                ModelTestPill(
+                                    label = if (testing) "…" else com.openminis.app.mibot.design.t("测试", "Test"),
+                                    enabled = !testing,
+                                ) { testOne(entry.model.id) }
                                 if (hasBadge) {
-                                    ModalityIconsRow(inputModalities, outputModalities)
+                                    Box(
+                                        modifier = Modifier.width(72.dp),
+                                        contentAlignment = Alignment.CenterEnd,
+                                    ) {
+                                        ModalityIconsRow(inputModalities, outputModalities)
+                                    }
                                 }
                             }
                         },
@@ -1536,4 +1665,29 @@ private fun ResponseIdleTimeoutSection(instanceId: String) {
             },
         )
     }
+}
+
+
+/** [fork/mibot-v4] "128K" style token counts. */
+internal fun compactTokens(n: Int?): String? = when {
+    n == null || n <= 0 -> null
+    n >= 1_000_000 -> (if (n % 1_000_000 == 0) "${n / 1_000_000}" else String.format(java.util.Locale.US, "%.1f", n / 1_000_000.0)) + "M"
+    n >= 1_000 -> if (n % 1024 == 0) "${n / 1024}K" else "${n / 1000}K"
+    else -> n.toString()
+}
+
+/** [fork/mibot-v4] Small tonal "测试" pill used on provider / model rows. */
+@Composable
+internal fun ModelTestPill(label: String, enabled: Boolean, onClick: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    Text(
+        label,
+        style = MaterialTheme.typography.labelMedium,
+        color = if (enabled) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(accent.copy(alpha = if (enabled) 0.14f else 0.06f))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    )
 }

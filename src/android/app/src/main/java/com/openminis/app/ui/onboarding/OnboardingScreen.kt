@@ -83,6 +83,9 @@ private fun WelcomeStep(onNext: () -> Unit) {
                 stringResource(R.string.onboarding_welcome_title),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
+                // [fork/mibot-v2] Explicit colour: no Surface sets
+                // LocalContentColor here, so the title fell back to black.
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.height(16.dp))
             Text(
@@ -120,6 +123,9 @@ private fun ApiKeyStep(
                 stringResource(R.string.onboarding_provider_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
+                // [fork/mibot-v2] Explicit colour: no Surface sets
+                // LocalContentColor here, so the title fell back to black.
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.height(8.dp))
             Text(
@@ -243,6 +249,9 @@ private fun ModelSelectionStep(
                 stringResource(R.string.onboarding_select_models_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
+                // [fork/mibot-v2] Explicit colour: no Surface sets
+                // LocalContentColor here, so the title fell back to black.
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
                 stringResource(R.string.onboarding_select_models_subtitle),

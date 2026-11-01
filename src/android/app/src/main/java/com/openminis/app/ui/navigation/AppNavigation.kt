@@ -78,6 +78,7 @@ import com.openminis.app.sandbox.TerminalSession
 import com.openminis.app.ui.terminal.TerminalScreen
 import com.openminis.app.ui.onboarding.OnboardingModelSelectionScreen
 import kotlinx.coroutines.flow.first
+import com.openminis.app.ui.glass.navigateToGlassTab
 
 // T342: Material 3 motion easing curves. Compose-Material3 (1.3.x) ships
 // `MotionScheme` only in 1.4-alpha; mirror the spec values directly so we
@@ -550,6 +551,14 @@ fun AppNavigation(
         quickActionStart != null -> quickActionStart
         else -> Routes.SESSION_LIST
     }
+    // [fork/mibot-v2] One shared backdrop behind every screen; the Mibot
+    // scheme makes Scaffold containers transparent so it shows through.
+    val mibotOn = com.openminis.app.ui.theme.LocalMibotActive.current
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+    if (mibotOn) com.openminis.app.ui.glass.MibotBackdrop()
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+    ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -562,7 +571,7 @@ fun AppNavigation(
         // correct on cold start.
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .then(if (mibotOn) Modifier else Modifier.background(MaterialTheme.colorScheme.background)),
         // T342: Material 3 motion — shared-axis X transition.
         // Spec (m3.material.io/styles/motion/transitions):
         //   - enter uses EmphasizedDecelerate (cubic-bezier 0.05, 0.7, 0.1, 1.0)
@@ -583,25 +592,31 @@ fun AppNavigation(
         // flashes; the slightly longer enter spec (300ms vs 220ms) is
         // covered by the same guard.
         enterTransition = {
-            slideIntoContainer(
+            if (mibotOn) androidx.compose.animation.fadeIn(tween(220, delayMillis = 90)) +
+                androidx.compose.animation.scaleIn(tween(220, delayMillis = 90), initialScale = 0.97f)
+            else slideIntoContainer(
                 AnimatedContentTransitionScope.SlideDirection.Start,
                 animationSpec = tween(300, easing = EmphasizedDecelerate),
             ) + fadeIn(animationSpec = tween(300, easing = EmphasizedDecelerate))
         },
         exitTransition = {
-            slideOutOfContainer(
+            if (mibotOn) androidx.compose.animation.fadeOut(tween(90))
+            else slideOutOfContainer(
                 AnimatedContentTransitionScope.SlideDirection.Start,
                 animationSpec = tween(200, easing = EmphasizedAccelerate),
             ) + fadeOut(animationSpec = tween(200, easing = EmphasizedAccelerate))
         },
         popEnterTransition = {
-            slideIntoContainer(
+            if (mibotOn) androidx.compose.animation.fadeIn(tween(220, delayMillis = 90)) +
+                androidx.compose.animation.scaleIn(tween(220, delayMillis = 90), initialScale = 0.97f)
+            else slideIntoContainer(
                 AnimatedContentTransitionScope.SlideDirection.End,
                 animationSpec = tween(300, easing = EmphasizedDecelerate),
             ) + fadeIn(animationSpec = tween(300, easing = EmphasizedDecelerate))
         },
         popExitTransition = {
-            slideOutOfContainer(
+            if (mibotOn) androidx.compose.animation.fadeOut(tween(90))
+            else slideOutOfContainer(
                 AnimatedContentTransitionScope.SlideDirection.End,
                 animationSpec = tween(200, easing = EmphasizedAccelerate),
             ) + fadeOut(animationSpec = tween(200, easing = EmphasizedAccelerate))
@@ -643,8 +658,82 @@ fun AppNavigation(
             )
         }
 
+        // [fork/glass-ui] Top-level tab pages + backdrop settings.
+        composable(com.openminis.app.ui.glass.GlassRoutes.FEED) {
+            com.openminis.app.ui.glass.GlassTabShell(
+                current = com.openminis.app.ui.glass.GlassTab.FEED,
+                onSelect = { navController.navigateToGlassTab(it) },
+                scrollUnder = true,
+            ) { com.openminis.app.ui.glass.GlassFeedPage() }
+        }
+        composable(com.openminis.app.ui.glass.GlassRoutes.IDEAS) {
+            com.openminis.app.ui.glass.GlassTabShell(
+                current = com.openminis.app.ui.glass.GlassTab.IDEAS,
+                onSelect = { navController.navigateToGlassTab(it) },
+                scrollUnder = true,
+            ) { com.openminis.app.ui.glass.GlassIdeasPage() }
+        }
+        composable(com.openminis.app.ui.glass.GlassRoutes.BOTS) {
+            com.openminis.app.ui.glass.GlassTabShell(
+                current = com.openminis.app.ui.glass.GlassTab.BOTS,
+                onSelect = { navController.navigateToGlassTab(it) },
+                scrollUnder = true,
+            ) {
+                com.openminis.app.mibot.bots.BotsPage(
+                    onOpen = { id -> navController.navigate("sub_agent/$id") },
+                    onNew = { navController.navigate("sub_agent/${com.openminis.app.ui.settings.DRAFT_AGENT_ID}") },
+                    onAgentSettings = { navController.safeNavigate(Routes.AGENTS) },
+                )
+            }
+        }
+        composable(com.openminis.app.ui.glass.GlassRoutes.BACKDROP) {
+            com.openminis.app.mibot.settings.BackgroundThemeScreen(
+                onBack = { navController.safePopBackStack() },
+                onMoreAppearance = { navController.safeNavigate(Routes.APPEARANCE) },
+            )
+        }
+
         composable(Routes.SETTINGS) {
+          val glassOn = com.openminis.app.ui.glass.glassEnabled()
+          val glassContext = LocalContext.current
+          GlassSettingsFrame(glassOn, navController) {
+            if (glassOn) {
+                val go: (String) -> () -> Unit = { r -> { navController.safeNavigate(r) } }
+                com.openminis.app.mibot.settings.MibotSettingsScreen(
+                    com.openminis.app.mibot.settings.MibotSettingsActions(
+                        vault = go(com.openminis.app.mibot.vault.VaultRoutes.LIST),
+                        providers = go(Routes.PROVIDER_LIST),
+                        gateway = go(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY),
+                        modelGroups = go(Routes.MODEL_GROUPS),
+                        backdrop = go(com.openminis.app.ui.glass.GlassRoutes.BACKDROP),
+                        appearance = go(Routes.APPEARANCE),
+                        bots = { navController.navigateToGlassTab(com.openminis.app.ui.glass.GlassTab.BOTS) },
+                        soul = go(Routes.SOUL),
+                        skills = go(Routes.SKILLS),
+                        memory = go(Routes.MEMORY),
+                        mcp = go(Routes.MCP),
+                        tools = go(Routes.AGENT_TOOLS),
+                        scheduled = go(Routes.SCHEDULED_TASKS),
+                        sandbox = go(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX),
+                        terminal = go(Routes.terminal()),
+                        files = { mibotOpenRootfsFiles(glassContext, navController) },
+                        network = go(Routes.NETWORK),
+                        tailscale = go(Routes.NETWORK_TAILSCALE),
+                        proxies = go(Routes.NETWORK_PROXIES),
+                        permissions = go(Routes.PERMISSIONS),
+                        background = go(Routes.BACKGROUND),
+                        backup = go(Routes.BACKUP),
+                        diagnostics = go(com.openminis.app.mibot.settings.DiagnosticsRoutes.DIAGNOSTICS),
+                        reportBug = { com.openminis.app.ui.glass.ForkBugReport.open(glassContext) },
+                        about = go(Routes.ABOUT),
+                        virtualDisplay = go(com.openminis.app.mibot.phone.VdRoutes.PAGE),
+                    ),
+                )
+            } else
             SettingsScreen(
+                showBack = !glassOn,
+                onBackdropClick = { navController.safeNavigate(com.openminis.app.ui.glass.GlassRoutes.BACKDROP) },
+                onReportBugClick = { com.openminis.app.ui.glass.ForkBugReport.open(glassContext) },
                 onBack = { navController.safePopBackStack() },
                 onProvidersClick = { navController.safeNavigate(Routes.PROVIDER_LIST) },
                 onModelGroupsClick = { navController.safeNavigate(Routes.MODEL_GROUPS) },
@@ -671,6 +760,7 @@ fun AppNavigation(
                 onMountedFoldersClick = { navController.safeNavigate(Routes.MOUNTED_FOLDERS) },
                 onSharedFoldersClick = { navController.safeNavigate(Routes.SHARED_FOLDERS) },
             )
+          }
         }
 
         composable(Routes.BACKUP) { entry ->
@@ -1646,5 +1736,117 @@ fun AppNavigation(
                 },
             )
         }
+
+        // ---------------------------------------------------------------
+        // [fork/mibot-v2] Mibot pages.
+        composable(com.openminis.app.mibot.vault.VaultRoutes.LIST) {
+            com.openminis.app.mibot.vault.VaultListScreen(
+                onBack = { navController.safePopBackStack() },
+                onOpen = { id -> navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit(id)) },
+                onNew = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit("new")) },
+                onAudit = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.AUDIT) },
+                onDiscover = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER) },
+                onService = { key -> navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.service(key)) },
+            )
+        }
+        // [fork/mibot-v4] Auto-discover & connect, and one service's accounts.
+        composable(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER) {
+            com.openminis.app.mibot.vault.VaultDiscoverScreen(
+                onBack = { navController.safePopBackStack() },
+                onManual = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit("new")) },
+            )
+        }
+        composable(
+            com.openminis.app.mibot.vault.VaultRoutes.SERVICE,
+            arguments = listOf(navArgument("sid") { type = NavType.StringType }),
+        ) { entry ->
+            com.openminis.app.mibot.vault.VaultServiceScreen(
+                key = entry.arguments?.getString("sid").orEmpty(),
+                onBack = { navController.safePopBackStack() },
+                onOpen = { id -> navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit(id)) },
+                onDiscover = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER) },
+            )
+        }
+        composable(
+            com.openminis.app.mibot.vault.VaultRoutes.EDIT,
+            arguments = listOf(navArgument("id") { type = NavType.StringType }),
+        ) { entry ->
+            com.openminis.app.mibot.vault.VaultEditScreen(
+                id = entry.arguments?.getString("id") ?: "new",
+                onBack = { navController.safePopBackStack() },
+            )
+        }
+        composable(com.openminis.app.mibot.vault.VaultRoutes.AUDIT) {
+            com.openminis.app.mibot.vault.VaultAuditScreen(onBack = { navController.safePopBackStack() })
+        }
+        composable(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY) {
+            com.openminis.app.mibot.gateway.GatewayScreen(
+                onBack = { navController.safePopBackStack() },
+                onProvider = { id -> navController.safeNavigate(Routes.providerDetail(id)) },
+                onModelGroups = { navController.safeNavigate(Routes.MODEL_GROUPS) },
+                onUsage = { navController.safeNavigate(Routes.USAGE_STATS) },
+                onAddProvider = { navController.safeNavigate(Routes.ADD_PROVIDER) },
+            )
+        }
+        composable(com.openminis.app.mibot.settings.DiagnosticsRoutes.DIAGNOSTICS) {
+            val diagContext = LocalContext.current
+            com.openminis.app.mibot.settings.DiagnosticsScreen(
+                onBack = { navController.safePopBackStack() },
+                onLogs = { navController.safeNavigate(Routes.LOGS) },
+                onUsage = { navController.safeNavigate(Routes.USAGE_STATS) },
+                onStorage = { navController.safeNavigate(Routes.STORAGE) },
+                onGateway = { navController.safeNavigate(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY) },
+                onReportBug = { com.openminis.app.ui.glass.ForkBugReport.open(diagContext) },
+            )
+        }
+        // [fork/mibot-v3] Background control / hidden virtual display.
+        composable(com.openminis.app.mibot.phone.VdRoutes.PAGE) {
+            com.openminis.app.mibot.phone.VdScreen(onBack = { navController.safePopBackStack() })
+        }
+        composable(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX) {
+            val sbContext = LocalContext.current
+            com.openminis.app.mibot.sandbox.SandboxScreen(
+                onBack = { navController.safePopBackStack() },
+                onTerminal = { navController.safeNavigate(Routes.terminal()) },
+                onFiles = { mibotOpenRootfsFiles(sbContext, navController) },
+                onDns = { navController.safeNavigate(Routes.CONTAINER_DNS) },
+                onNetwork = { navController.safeNavigate(Routes.NETWORK) },
+                onEnvVars = { navController.safeNavigate(Routes.ENV_VARS) },
+                onMounts = { navController.safeNavigate(Routes.MOUNTED_FOLDERS) },
+                onShared = { navController.safeNavigate(Routes.SHARED_FOLDERS) },
+                onStorage = { navController.safeNavigate(Routes.BACKUP) },
+                onManage = { navController.safeNavigate(Routes.ROOTFS_MANAGEMENT) },
+                onMirrors = { navController.safeNavigate(Routes.ROOTFS_MANAGEMENT) },
+                onOpenTerminalCommand = { cmd -> navController.safeNavigate(Routes.terminal(cmd)) },
+            )
+        }
     }
+    }
+    }
+}
+
+/** [fork/mibot-v2] Open the file browser at the sandbox's Linux root. */
+private fun mibotOpenRootfsFiles(context: android.content.Context, navController: NavHostController) {
+    val rootfs = RootfsManager.getInstance(context.applicationContext)
+    FilePreviewHolder.fileBrowserViewModel = FileBrowserViewModel(
+        rootPath = rootfs.rootfsDir,
+        rootLabel = "/",
+        displayLinuxPrefix = "/",
+    )
+    navController.safeNavigate(Routes.FILE_BROWSER)
+}
+
+/** [fork/glass-ui] Settings is the last tab when the glass UI is on. */
+@Composable
+private fun GlassSettingsFrame(glass: Boolean, navController: NavHostController, content: @Composable () -> Unit) {
+    if (!glass) {
+        content()
+        return
+    }
+    com.openminis.app.ui.glass.GlassTabShell(
+        current = com.openminis.app.ui.glass.GlassTab.SETTINGS,
+        onSelect = { navController.navigateToGlassTab(it) },
+        scrollUnder = true,
+        showBackdrop = false,
+    ) { content() }
 }

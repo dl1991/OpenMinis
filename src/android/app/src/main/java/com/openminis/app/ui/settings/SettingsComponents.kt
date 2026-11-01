@@ -1,6 +1,7 @@
 package com.openminis.app.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -90,8 +91,13 @@ fun SettingsScaffold(
     bottomBar: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
     Scaffold(
         topBar = {
+            // [fork/mibot-v4] Same centred title + frosted round back button as Mibot pages.
+            if (mibotUi && navigation == null) {
+                com.openminis.app.mibot.design.MibotTopBar(title, onBack) { actions?.invoke() }
+            } else {
             val titleSlot: @Composable () -> Unit = {
                 Text(
                     title,
@@ -124,6 +130,7 @@ fun SettingsScaffold(
                         containerColor = MaterialTheme.colorScheme.background,
                     ),
                 )
+            }
             }
         },
         floatingActionButton = { floatingActionButton?.invoke() },
@@ -187,8 +194,10 @@ fun SettingsSwitch(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    colors: androidx.compose.material3.SwitchColors = SwitchDefaults.colors(),
+    colors: androidx.compose.material3.SwitchColors? = null,
 ) {
+    val resolved = colors ?: if (com.openminis.app.ui.theme.LocalMibotActive.current)
+        com.openminis.app.mibot.design.mibotSwitchColors() else SwitchDefaults.colors()
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
     ) {
@@ -197,7 +206,7 @@ fun SettingsSwitch(
             onCheckedChange = onCheckedChange,
             modifier = modifier,
             enabled = enabled,
-            colors = colors,
+            colors = resolved,
         )
     }
 }
@@ -222,9 +231,18 @@ fun SettingsSection(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 24.dp),
+            .padding(top = if (com.openminis.app.ui.theme.LocalMibotActive.current) 16.dp else 24.dp),
     ) {
-        if (header != null) {
+        val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
+        if (header != null && mibotUi) {
+            Text(
+                text = header,
+                fontSize = com.openminis.app.mibot.design.MibotType.Section,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 28.dp, end = 28.dp, bottom = 6.dp),
+            )
+        } else if (header != null) {
             Text(
                 text = header.uppercaseForDisplay(),
                 style = MaterialTheme.typography.labelSmall,
@@ -251,9 +269,16 @@ fun SettingsSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                .padding(horizontal = if (mibotUi) com.openminis.app.mibot.design.MibotSpace.Screen else 16.dp)
+                .then(
+                    if (mibotUi) Modifier
+                        .clip(com.openminis.app.mibot.design.MibotRadius.CardShape)
+                        .background(com.openminis.app.mibot.design.MibotTokens.card())
+                        .border(1.dp, com.openminis.app.mibot.design.MibotTokens.hairline(), com.openminis.app.mibot.design.MibotRadius.CardShape)
+                    else Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                ),
             content = content,
         )
         if (footer != null) {
@@ -298,6 +323,7 @@ fun SettingsRow(
     // Null keeps the plain clickable, so no other row changes.
     onLongClick: (() -> Unit)? = null,
 ) {
+    val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
     Column {
         Row(
             modifier = Modifier
@@ -308,7 +334,7 @@ fun SettingsRow(
                 // tall row can still grow; the symmetric 12dp vertical padding (was
                 // effectively asymmetric once the 0.5dp divider was added/removed)
                 // is what made a no-subtitle last row read ~50px shorter.
-                .heightIn(min = minHeight)
+                .heightIn(min = if (mibotUi) minOf(minHeight, 50.dp) else minHeight)
                 .then(
                     when {
                         onClick != null && onLongClick != null ->
@@ -317,12 +343,15 @@ fun SettingsRow(
                         else -> Modifier
                     },
                 )
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = if (mibotUi) 9.dp else 12.dp),
             // #10 keep the trailing control (Switch/value) vertically centered
             // against the title — already centered, kept explicit.
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (icon != null) {
+            if (icon != null && mibotUi) {
+                com.openminis.app.mibot.design.IconChip(icon, iconColor)
+                Spacer(Modifier.width(12.dp))
+            } else if (icon != null) {
                 Box(
                     modifier = Modifier
                         .size(30.dp)
@@ -366,7 +395,14 @@ fun SettingsRow(
                 trailing()
             }
 
-            if (showChevron) {
+            if (showChevron && mibotUi) {
+                Spacer(Modifier.width(4.dp))
+                com.openminis.app.mibot.design.Glyph(
+                    com.openminis.app.mibot.design.LineIcons.ChevronRight,
+                    size = 16.dp,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                )
+            } else if (showChevron) {
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -378,7 +414,7 @@ fun SettingsRow(
         }
 
         if (showDivider) {
-            val insetStart = if (icon != null) 58.dp else 14.dp
+            val insetStart = if (icon != null) (if (mibotUi) 54.dp else 58.dp) else 14.dp
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -415,7 +451,6 @@ fun SettingsSwitchRow(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = enabled,
-                colors = SwitchDefaults.colors(),
             )
         },
     )
@@ -468,7 +503,7 @@ fun SettingsChoiceRow(
                 .fillMaxWidth()
                 // [T-android-settings-ui-md3] #1 match SettingsRow's 56dp min so
                 // choice/radio rows line up with toggle/value rows in mixed lists.
-                .heightIn(min = 56.dp)
+                .heightIn(min = if (com.openminis.app.ui.theme.LocalMibotActive.current) 48.dp else 56.dp)
                 .clickable(onClick = onSelect)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -483,7 +518,9 @@ fun SettingsChoiceRow(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            if (selected) {
+            if (selected && com.openminis.app.ui.theme.LocalMibotActive.current) {
+                com.openminis.app.mibot.design.CheckMark(true)
+            } else if (selected) {
                 Icon(
                     Icons.Default.Check,
                     contentDescription = "Selected",
