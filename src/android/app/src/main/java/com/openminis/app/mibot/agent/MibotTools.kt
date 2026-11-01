@@ -137,21 +137,15 @@ object MibotTools {
         return if (sub.error != null) null to sub.error else sub.text to null
     }
 
-    suspend fun probe(baseUrl: String, key: String?, gemini: Boolean): String = withContext(Dispatchers.IO) {
+    suspend fun probe(baseUrl: String, key: String?, gemini: Boolean, instanceId: String? = null): String {
+        // [fork/mibot-v4] Routed through Settings › Network like real traffic.
         val url = if (gemini) "https://generativelanguage.googleapis.com/v1beta/models" + (key?.let { "?key=$it" } ?: "")
         else baseUrl.trimEnd('/') + "/models"
-        val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = 12_000; readTimeout = 15_000
-            if (!gemini && key != null) setRequestProperty("Authorization", "Bearer $key")
-        }
-        try {
-            val code = conn.responseCode
-            val body = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
-            val count = runCatching { JSONObject(body).optJSONArray(if (gemini) "models" else "data")?.length() }.getOrNull()
-            "HTTP $code" + (count?.let { ", $it models" } ?: "") + if (code !in 200..299) ": " + body.take(200) else ""
-        } finally {
-            conn.disconnect()
-        }
+        val headers = if (!gemini && key != null) mapOf("Authorization" to "Bearer $key") else emptyMap()
+        val o = com.openminis.app.mibot.gateway.GatewayNet.request(instanceId, url, headers = headers)
+        if (o.code == null) return o.detail
+        val count = runCatching { JSONObject(o.body).optJSONArray(if (gemini) "models" else "data")?.length() }.getOrNull()
+        return "HTTP ${o.code}" + (count?.let { ", $it models" } ?: "") + if (o.code !in 200..299) ": " + o.body.take(200) else ""
     }
 
     suspend fun executeProvider(ctx: Context, repo: ProviderRepository, argsJson: String): ToolExecutionResult {
@@ -169,7 +163,8 @@ object MibotTools {
                 if (base.isNullOrBlank() && !gemini) return ToolExecutionResult("base_url or instance_id required", false)
                 val (key, err) = if (inst != null) (repo.usableApiKey(inst) to null) else keyFromVault(ctx, a.optString("key_vault_id"), "provider test")
                 if (err != null) return ToolExecutionResult(err, false)
-                val r = runCatching { probe(base ?: "", key, gemini) }.getOrElse { "error: ${it.message}" }
+                val r = runCatching { probe(base ?: "", key, gemini, inst?.id) }.getOrElse { "error: ${it.message}" }
+                inst?.let { com.openminis.app.mibot.gateway.GatewayHealth.recordCheck(it.id, com.openminis.app.mibot.vault.VaultBroker.scrub(r, listOfNotNull(key))) }
                 ToolExecutionResult(com.openminis.app.mibot.vault.VaultBroker.scrub(r, listOfNotNull(key)), r.startsWith("HTTP 2"))
             }
             "add" -> {

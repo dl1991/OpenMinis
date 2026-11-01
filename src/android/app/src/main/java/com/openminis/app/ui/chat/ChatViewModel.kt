@@ -7881,7 +7881,14 @@ class ChatViewModel(
             } catch (_: Exception) { continue }
             out.add(FallbackCandidate(provider = p, entryId = entry.id))
         }
-        return out
+        // [fork/mibot-v4] AI gateway: put accounts / regions marked unavailable
+        // (cooling, invalid key, "没有可用的…账号") last instead of retrying them
+        // first; they stay as a last resort so a degraded group still answers.
+        val healthy = out.filter { c ->
+            val e = config.modelEntries.find { it.id == c.entryId }
+            e == null || com.openminis.app.mibot.gateway.GatewayHealth.isEntryUsable(e.providerInstanceId, e.model.id)
+        }
+        return healthy + (out - healthy.toSet())
     }
 
     /**
@@ -7895,12 +7902,14 @@ class ChatViewModel(
      * (`_modelName` / `_activeEntryId` / `currentModel` / `_providerName` /
      * `persistBinding`) so both paths leave the session in the same shape.
      */
-    internal fun noteEntryFailed(entryId: String?) {
+    internal fun noteEntryFailed(entryId: String?, reason: String? = null) {
         if (!entryId.isNullOrEmpty()) recentlyFailedEntryIds.add(entryId)
-        // [fork/mibot-v2] AI gateway: cool the failing account down.
+        // [fork/mibot-v2/v4] AI gateway: record the real error on the failing
+        // account (a region error marks only that region unavailable).
         if (!entryId.isNullOrEmpty()) {
+            val why = reason ?: "fallback"
             providerRepository.config.value.modelEntries.find { it.id == entryId }?.let {
-                com.openminis.app.mibot.gateway.GatewayHealth.recordFailure(context, it.providerInstanceId, "fallback")
+                com.openminis.app.mibot.gateway.GatewayHealth.recordFailure(context, it.providerInstanceId, why, it.model.id)
             }
         }
     }
@@ -12708,6 +12717,12 @@ class ChatViewModel(
                         // only change must not surface to the UI.
                         val isRealModelChange = next.model.id != currentProvider.model.id
                         fallbackReasons.add("⚠️ ${currentProvider.model.displayName}: $reason")
+                        // [fork/mibot-v4] Tell the AI gateway what really failed.
+                        currentIdentity?.entryId?.let { failedId ->
+                            providerRepository.config.value.modelEntries.find { it.id == failedId }?.let { fe ->
+                                com.openminis.app.mibot.gateway.GatewayHealth.recordFailure(context, fe.providerInstanceId, reason, fe.model.id)
+                            }
+                        }
                         Log.i(TAG, "🔀 $reason on ${currentProvider.model.displayName}, switching to ${next.model.displayName} (realModelChange=$isRealModelChange)")
                         currentProvider = next
                         currentIdentity = providerIdentity(nextCandidate.entryId)

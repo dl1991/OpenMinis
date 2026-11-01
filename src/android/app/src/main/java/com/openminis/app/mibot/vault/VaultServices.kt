@@ -26,6 +26,8 @@ data class VaultService(
     val keyRegex: String?,
     val logo: String?,
     val color: String?,
+    /** [fork/mibot-v4] Free sign-up AND free models (not just a trial credit). */
+    val freeModels: Boolean = false,
 ) {
     fun matchesSite(site: String): Boolean {
         val s = site.lowercase().removePrefix("https://").removePrefix("http://").substringBefore('/')
@@ -87,6 +89,7 @@ object VaultServices {
                     domains = strs("domains"), packages = strs("packages"), auth = o.optString("auth", "web"), url = o.optString("url"),
                     manifest = o.optStringOrNull("manifest"), free = o.optStringOrNull("free"), keyRegex = o.optStringOrNull("keyRegex"),
                     logo = o.optStringOrNull("logo"), color = o.optStringOrNull("color"),
+                    freeModels = o.optBoolean("freeModels", false),
                 )
             }
         }.getOrDefault(emptyList())

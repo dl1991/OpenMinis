@@ -571,6 +571,8 @@ class MinisApp : Application(), ImageLoaderFactory {
         }
         com.openminis.app.agent.jobs.AgentCallbackLabels.install(this)
         providerRepository = ProviderRepository(this)
+        // [fork/mibot-v4] Restore AI-gateway health (routing skips dead accounts / regions).
+        runCatching { com.openminis.app.mibot.gateway.GatewayHealth.init(this) }
         // [T-provider-quota] Upstream balance / quota cache; refreshes only while
         // the app is in the foreground.
         com.openminis.app.quota.QuotaStore.start(this, providerRepository)

@@ -11,9 +11,10 @@
   "auth": "oauth_openrouter",
   "url": "https://openrouter.ai/settings/keys",
   "manifest": "openrouter",
-  "free": "部分模型免费（:free 后缀）",
+  "free": "免费模型（:free 后缀）",
   "keyRegex": "sk-or-v1-[0-9a-f]{40,}",
-  "logo": "mibot/logos/openrouter.png"
+  "logo": "mibot/logos/openrouter.png",
+  "freeModels": true
  },
  {
   "id": "openai",
@@ -65,9 +66,10 @@
   ],
   "auth": "api_key",
   "url": "https://aistudio.google.com/app/apikey",
-  "free": "AI Studio 免费额度",
+  "free": "AI Studio 免费层（Flash / Gemma）",
   "keyRegex": "AIza[0-9A-Za-z_\\-]{35}",
-  "logo": "mibot/logos/gemini.png"
+  "logo": "mibot/logos/gemini.png",
+  "freeModels": true
  },
  {
   "id": "deepseek",
@@ -137,9 +139,10 @@
   "auth": "api_key",
   "url": "https://cloud.siliconflow.cn/account/ak",
   "manifest": "siliconflow",
-  "free": "注册送体验金，部分模型免费",
+  "free": "多款模型永久免费",
   "keyRegex": "sk-[a-z]{40,}",
-  "logo": "mibot/logos/siliconflow.png"
+  "logo": "mibot/logos/siliconflow.png",
+  "freeModels": true
  },
  {
   "id": "zhipu",
@@ -156,9 +159,10 @@
   ],
   "auth": "api_key",
   "url": "https://open.bigmodel.cn/usercenter/apikeys",
-  "free": "GLM-4-Flash 免费",
+  "free": "GLM-Flash 系列免费",
   "keyRegex": "[0-9a-f]{32}\\.[A-Za-z0-9]{16}",
-  "logo": "mibot/logos/zhipu.png"
+  "logo": "mibot/logos/zhipu.png",
+  "freeModels": true
  },
  {
   "id": "doubao",
@@ -224,9 +228,10 @@
   "packages": [],
   "auth": "api_key",
   "url": "https://console.groq.com/keys",
-  "free": "免费层可用",
+  "free": "免费层，全部模型可用",
   "keyRegex": "gsk_[A-Za-z0-9]{40,}",
-  "logo": "mibot/logos/groq.png"
+  "logo": "mibot/logos/groq.png",
+  "freeModels": true
  },
  {
   "id": "mistral",
@@ -243,7 +248,9 @@
   "auth": "api_key",
   "url": "https://console.mistral.ai/api-keys",
   "keyRegex": "[A-Za-z0-9]{32}",
-  "logo": "mibot/logos/mistral.png"
+  "logo": "mibot/logos/mistral.png",
+  "freeModels": true,
+  "free": "Experiment 免费层"
  },
  {
   "id": "perplexity",
@@ -290,9 +297,10 @@
   "packages": [],
   "auth": "api_key",
   "url": "https://huggingface.co/settings/tokens",
-  "free": "推理 API 免费额度",
+  "free": "推理 API 每月免费额度",
   "keyRegex": "hf_[A-Za-z0-9]{30,}",
-  "logo": "mibot/logos/huggingface.png"
+  "logo": "mibot/logos/huggingface.png",
+  "freeModels": true
  },
  {
   "id": "elevenlabs",
@@ -448,8 +456,9 @@
   ],
   "auth": "web",
   "url": "https://dash.cloudflare.com/login",
-  "free": "Workers 免费层",
-  "logo": "mibot/logos/cloudflare.png"
+  "free": "Workers AI 每日免费额度",
+  "logo": "mibot/logos/cloudflare.png",
+  "freeModels": true
  },
  {
   "id": "aliyun",

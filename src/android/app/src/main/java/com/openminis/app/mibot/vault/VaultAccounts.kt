@@ -202,8 +202,12 @@ fun VaultListScreen(onBack: () -> Unit, onOpen: (String) -> Unit, onNew: () -> U
     fun hit(name: String, sub: String) = q.isEmpty() || name.lowercase().contains(q) || sub.lowercase().contains(q)
     val shownGroups = groups.filter { hit(it.name, it.entries.joinToString { e -> e.site + e.username }) }
     val connectedIds = groups.mapNotNull { it.service?.id }.toSet()
-    val notConnected = services.filter { it.id !in connectedIds && it.id !in ignored && hit(it.name, it.sub) }
-    val freeOnes = services.filter { it.free != null && it.id !in connectedIds }
+    // [fork/mibot-v4] AI suggestions only list services with free sign-up AND
+    // free models; paid-only AI providers can still be added by hand / search.
+    val notConnected = services.filter {
+        it.id !in connectedIds && it.id !in ignored && hit(it.name, it.sub) && (it.cat != "ai" || it.freeModels || q.isNotEmpty())
+    }
+    val freeOnes = services.filter { it.freeModels && it.id !in connectedIds }
 
     MibotScaffold(
         title = t("账号", "Accounts"),

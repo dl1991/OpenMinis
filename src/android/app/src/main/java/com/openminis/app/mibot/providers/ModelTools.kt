@@ -11,8 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
 /**
  * [fork/mibot-v4] Free-tier presets only expose free models; paid ones are
@@ -122,6 +120,18 @@ object ModelTester {
         }
     }
 
+    private fun networkReason(ctx: Context, detail: String): String {
+        val d = detail.removePrefix("error: ")
+        val l = d.lowercase()
+        fun z(zh: String, en: String) = com.openminis.app.mibot.design.tc(ctx, zh, en)
+        return when {
+            "timeout" in l -> z("网络超时", "Timed out")
+            l.startsWith("dns") -> z("DNS 解析失败", "DNS failed")
+            l.startsWith("tls") -> z("TLS 握手失败", "TLS failed")
+            else -> z("网络异常：", "Network: ") + d.take(60)
+        }
+    }
+
     suspend fun test(ctx: Context, repo: ProviderRepository, inst: ProviderInstance, modelId: String): Result = withContext(Dispatchers.IO) {
         ensureLoaded(ctx)
         val apiKey = repo.usableApiKey(inst)
@@ -142,23 +152,29 @@ object ModelTester {
                         .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", "hi")))
                 else -> throw IllegalStateException(com.openminis.app.mibot.design.tc(ctx, "这个服务商不支持快速测试", "Quick test not supported"))
             }
-            val conn = (URL(url).openConnection() as HttpURLConnection).apply {
-                requestMethod = "POST"; doOutput = true; connectTimeout = 15_000; readTimeout = 45_000
-                setRequestProperty("Content-Type", "application/json")
+            // [fork/mibot-v4] Routed like real traffic (Settings › Network proxy / Tailscale).
+            val headers = buildMap {
                 when {
                     gemini -> {}
-                    anthropic -> { setRequestProperty("x-api-key", apiKey); setRequestProperty("anthropic-version", "2023-06-01") }
-                    else -> if (apiKey.isNotEmpty()) setRequestProperty("Authorization", "Bearer $apiKey")
+                    anthropic -> { put("x-api-key", apiKey); put("anthropic-version", "2023-06-01") }
+                    else -> if (apiKey.isNotEmpty()) put("Authorization", "Bearer $apiKey")
                 }
             }
-            val start = System.nanoTime()
-            try {
-                conn.outputStream.use { it.write(body.toString().toByteArray()) }
-                val code = conn.responseCode
-                val text = ((if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() }).orEmpty()
-                val ms = (System.nanoTime() - start) / 1_000_000
-                if (code in 200..299) Result(true, ms, "${ms} ms") else Result(false, ms, classify(ctx, code, text))
-            } finally { conn.disconnect() }
+            val o = com.openminis.app.mibot.gateway.GatewayNet.request(inst.id, url, "POST", headers, body.toString())
+            val scrub = { t: String -> com.openminis.app.mibot.vault.VaultBroker.scrub(t, listOf(apiKey)) }
+            val code = o.code
+            // A model test is a real probe of the account too.
+            if (o.kind in setOf(com.openminis.app.mibot.gateway.GatewayNet.Kind.OK, com.openminis.app.mibot.gateway.GatewayNet.Kind.NETWORK,
+                    com.openminis.app.mibot.gateway.GatewayNet.Kind.AUTH, com.openminis.app.mibot.gateway.GatewayNet.Kind.QUOTA)) {
+                com.openminis.app.mibot.gateway.GatewayHealth.init(ctx)
+                com.openminis.app.mibot.gateway.GatewayHealth.recordProbe(inst.id, o.copy(body = ""),
+                    scrub(if (code == null) o.detail else "HTTP $code · $modelId"))
+            }
+            when {
+                code == null -> Result(false, o.latencyMs, scrub(networkReason(ctx, o.detail)))
+                code in 200..299 -> Result(true, o.latencyMs, "${o.latencyMs} ms")
+                else -> Result(false, o.latencyMs, scrub(classify(ctx, code, o.body)))
+            }
         }.getOrElse { Result(false, 0, (it.message ?: it.javaClass.simpleName).take(80)) }
         _results.value = _results.value + (key(inst.id, modelId) to r)
         persist(ctx)

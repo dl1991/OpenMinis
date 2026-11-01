@@ -69,6 +69,83 @@ Test-only dependencies: JUnit 4.13.2 (**EPL-1.0**), MockWebServer 4.12.0 (**Apac
 
 No code from Eta (PolyForm Noncommercial) is included.
 
+## Mibot fork — icons and logos
+
+| Asset | Location | License | Notes |
+|---|---|---|---|
+| [Lucide](https://lucide.dev) icons | Path data in `src/android/app/src/main/java/com/openminis/app/mibot/design/MibotIcons.kt` | **ISC** — Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (**MIT**); all other copyright (c) for Lucide are held by Lucide Contributors 2022 | Glyph geometry converted to Compose path data; stroke width and duotone fill adjusted. |
+| [Simple Icons](https://simpleicons.org) brand marks | `src/android/app/src/main/assets/mibot/logos/` (mail, dev, social, finance and office services) | **CC0-1.0** | Brand names and logos remain trademarks of their owners; used only to label the corresponding service. |
+| [LobeHub Icons](https://github.com/lobehub/lobe-icons) AI brand marks | `src/android/app/src/main/assets/mibot/logos/` (AI providers, Tencent Cloud) | **MIT** — Copyright (c) 2023 LobeHub | Brand names and logos remain trademarks of their owners; used only to label the corresponding service. Per-file sources in the table below. |
+
+<details><summary>Per-logo sources</summary>
+
+| Service | Source (icon id) | License |
+|---|---|---|
+| openrouter | LobeHub Icons (`openrouter`) | MIT |
+| openai | LobeHub Icons (`openai`) | MIT |
+| claude | LobeHub Icons (`claude-color`) | MIT |
+| gemini | LobeHub Icons (`gemini-color`) | MIT |
+| deepseek | LobeHub Icons (`deepseek-color`) | MIT |
+| kimi | LobeHub Icons (`kimi-color`) | MIT |
+| qwen | LobeHub Icons (`qwen-color`) | MIT |
+| siliconflow | LobeHub Icons (`siliconcloud-color`) | MIT |
+| zhipu | LobeHub Icons (`zhipu-color`) | MIT |
+| doubao | LobeHub Icons (`doubao-color`) | MIT |
+| hunyuan | LobeHub Icons (`yuanbao-color`) | MIT |
+| minimax | LobeHub Icons (`minimax-color`) | MIT |
+| groq | LobeHub Icons (`groq`) | MIT |
+| mistral | LobeHub Icons (`mistral-color`) | MIT |
+| perplexity | LobeHub Icons (`perplexity-color`) | MIT |
+| xai | LobeHub Icons (`grok`) | MIT |
+| huggingface | LobeHub Icons (`huggingface-color`) | MIT |
+| elevenlabs | LobeHub Icons (`elevenlabs`) | MIT |
+| coze | LobeHub Icons (`coze`) | MIT |
+| manus | LobeHub Icons (`manus`) | MIT |
+| sensenova | LobeHub Icons (`sensenova-color`) | MIT |
+| gmail | Simple Icons (`gmail`) | CC0-1.0 |
+| qqmail | Simple Icons (`qq`) | CC0-1.0 |
+| github | Simple Icons (`github`) | CC0-1.0 |
+| cloudflare | Simple Icons (`cloudflare`) | CC0-1.0 |
+| aliyun | Simple Icons (`alibabacloud`) | CC0-1.0 |
+| tencentcloud | LobeHub Icons (`tencentcloud-color`) | MIT |
+| digitalocean | Simple Icons (`digitalocean`) | CC0-1.0 |
+| vercel | Simple Icons (`vercel`) | CC0-1.0 |
+| supabase | Simple Icons (`supabase`) | CC0-1.0 |
+| railway | Simple Icons (`railway`) | CC0-1.0 |
+| netlify | Simple Icons (`netlify`) | CC0-1.0 |
+| neon | Simple Icons (`neon`) | CC0-1.0 |
+| sentry | Simple Icons (`sentry`) | CC0-1.0 |
+| gitee | Simple Icons (`gitee`) | CC0-1.0 |
+| wechat | Simple Icons (`wechat`) | CC0-1.0 |
+| qq | Simple Icons (`qq`) | CC0-1.0 |
+| telegram | Simple Icons (`telegram`) | CC0-1.0 |
+| discord | Simple Icons (`discord`) | CC0-1.0 |
+| x | Simple Icons (`x`) | CC0-1.0 |
+| weibo | Simple Icons (`sinaweibo`) | CC0-1.0 |
+| xiaohongshu | Simple Icons (`xiaohongshu`) | CC0-1.0 |
+| bilibili | Simple Icons (`bilibili`) | CC0-1.0 |
+| douyin | Simple Icons (`tiktok`) | CC0-1.0 |
+| youtube | Simple Icons (`youtube`) | CC0-1.0 |
+| line | Simple Icons (`line`) | CC0-1.0 |
+| binance | Simple Icons (`binance`) | CC0-1.0 |
+| okx | Simple Icons (`okx`) | CC0-1.0 |
+| coinbase | Simple Icons (`coinbase`) | CC0-1.0 |
+| stripe | Simple Icons (`stripe`) | CC0-1.0 |
+| paypal | Simple Icons (`paypal`) | CC0-1.0 |
+| alipay | Simple Icons (`alipay`) | CC0-1.0 |
+| google | Simple Icons (`google`) | CC0-1.0 |
+| notion | Simple Icons (`notion`) | CC0-1.0 |
+| googlecalendar | Simple Icons (`googlecalendar`) | CC0-1.0 |
+| googledrive | Simple Icons (`googledrive`) | CC0-1.0 |
+| todoist | Simple Icons (`todoist`) | CC0-1.0 |
+| linear | Simple Icons (`linear`) | CC0-1.0 |
+| airtable | Simple Icons (`airtable`) | CC0-1.0 |
+| dropbox | Simple Icons (`dropbox`) | CC0-1.0 |
+| zapier | Simple Icons (`zapier`) | CC0-1.0 |
+| kaggle | Simple Icons (`kaggle`) | CC0-1.0 |
+
+</details>
+
 ## Removed / historical
 
 - **swift-markdown-ui** (MIT) — formerly vendored under `deps/swift-markdown-ui`; no longer referenced by the Xcode project or imported by any source file, and is not part of the open-source tree.
