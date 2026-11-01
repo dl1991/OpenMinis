@@ -69,6 +69,8 @@ fun SandboxScreen(
     onShared: () -> Unit,
     onStorage: () -> Unit,
     onManage: () -> Unit,
+    onMirrors: () -> Unit = onManage,
+    @Suppress("UNUSED_PARAMETER") onOpenTerminalCommand: (String) -> Unit = {},
 ) {
     val ctx = LocalContext.current
     val mgr = remember { RootfsManager.getInstance(ctx.applicationContext) }
@@ -132,7 +134,7 @@ fun SandboxScreen(
             MibotRow(t("环境变量", "Environment variables"), t("注入到每条命令", "Injected into every command"), Icons.Outlined.Tune, MibotTokens.Purple, onClick = onEnvVars, showDivider = true)
             MibotRow(t("挂载外部文件夹", "Mounted folders"), t("把手机文件夹挂进沙箱", "Mount phone folders into the sandbox"), Icons.Outlined.Folder, MibotTokens.Amber, onClick = onMounts, showDivider = true)
             MibotRow(t("共享文件夹", "Shared folders"), t("共享 / 技能 / 记忆", "Shared / skills / memory"), Icons.Outlined.FolderShared, MibotTokens.Green, onClick = onShared, showDivider = true)
-            MibotRow(t("镜像源与重装", "Mirrors & reinstall"), t("软件源、重置（可保留用户数据）", "Package mirrors, reset (optionally keep data)"), Icons.Outlined.RestartAlt, MibotTokens.Rose, onClick = onManage, showDivider = true)
+            MibotRow(t("镜像源与重装", "Mirrors & reinstall"), t("软件源、重置（可保留用户数据）", "Package mirrors, reset (optionally keep data)"), Icons.Outlined.RestartAlt, MibotTokens.Rose, onClick = onMirrors, showDivider = true)
             MibotRow(t("存储与备份", "Storage & backup"), t("空间占用与会话文件", "Usage and session files"), Icons.Outlined.Storage, MibotTokens.Steel, onClick = onStorage)
         }
 

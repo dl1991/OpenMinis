@@ -32,16 +32,19 @@ fun SettingsSection(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = if (mibotUi) 14.dp else 16.dp)) {
         Text(
-            text = title.uppercaseForDisplay(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+            text = if (mibotUi) title else title.uppercaseForDisplay(),
+            style = if (mibotUi) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelSmall,
+            color = if (mibotUi) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = if (mibotUi) 12.dp else 4.dp, vertical = 8.dp),
         )
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
+            shape = if (mibotUi) com.openminis.app.mibot.design.MibotRadius.CardShape else RoundedCornerShape(16.dp),
+            color = if (mibotUi) com.openminis.app.mibot.design.MibotTokens.card() else MaterialTheme.colorScheme.surface,
+            border = if (mibotUi) androidx.compose.foundation.BorderStroke(1.dp, com.openminis.app.mibot.design.MibotTokens.hairline()) else null,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 0.dp,
             modifier = Modifier.fillMaxWidth(),
         ) {

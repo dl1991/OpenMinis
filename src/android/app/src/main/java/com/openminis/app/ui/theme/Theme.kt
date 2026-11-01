@@ -180,14 +180,24 @@ fun MinisTheme(
         shapes = MinisShapes,
         typography = typography,
     ) {
+        // [fork/mibot-v4] Compact everywhere: the system font scale is still
+        // honoured, but capped at 1.15x on Mibot screens so very large system
+        // settings don't blow every page up to 18-20sp body text.
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val capped = if (mibot && density.fontScale > MIBOT_MAX_FONT_SCALE)
+            androidx.compose.ui.unit.Density(density.density, MIBOT_MAX_FONT_SCALE) else density
         CompositionLocalProvider(
             LocalChatPalette provides chatPalette,
             LocalMibotActive provides mibot,
             LocalMibotDark provides darkTheme,
+            androidx.compose.ui.platform.LocalDensity provides capped,
             content = content,
         )
     }
 }
+
+/** [fork/mibot-v4] Upper bound for the system font scale on Mibot screens. */
+const val MIBOT_MAX_FONT_SCALE = 1.15f
 
 /** [fork/mibot-v2] True while the Mibot design system (shared backdrop) is active. */
 val LocalMibotActive = androidx.compose.runtime.staticCompositionLocalOf { false }
@@ -220,7 +230,7 @@ val MibotLightColorScheme = lightColorScheme(
     surfaceContainerLowest = Color(0x99FFFFFF),
     surfaceContainerLow = Color(0xDEFFFFFF),
     surfaceContainer = Color(0xEBFBFCFE),
-    surfaceContainerHigh = Color(0xFFF8F9FB),
+    surfaceContainerHigh = Color(0xF5F8F9FB),
     surfaceContainerHighest = Color(0xFFF1F3F7),
     outline = Color(0xFFA3AAB8),
     outlineVariant = Color(0x33707A8C),
@@ -251,9 +261,9 @@ val MibotDarkColorScheme = darkColorScheme(
     surfaceContainerLowest = Color(0x990C0F17),
     surfaceContainerLow = Color(0xD91A1F2B),
     surfaceContainer = Color(0xE61D2230),
-    surfaceContainerHigh = Color(0xFF242A38),
+    surfaceContainerHigh = Color(0xF2242A38),
     surfaceContainerHighest = Color(0xFF2C3242),
-    outline = Color(0xFF6C7489),
+    outline = Color(0xFF8E97AB),
     outlineVariant = Color(0x33FFFFFF),
     inverseSurface = Color(0xFFECEFF6),
     inverseOnSurface = Color(0xFF1A1F2B),
@@ -320,10 +330,10 @@ private fun mibotTypography(factor: Float): Typography {
         headlineLarge = base.headlineLarge.m(24f, 30f, sb),
         headlineMedium = base.headlineMedium.m(22f, 28f, sb),
         headlineSmall = base.headlineSmall.m(20f, 26f, sb),
-        titleLarge = base.titleLarge.m(18f, 24f, sb),
-        titleMedium = base.titleMedium.m(15f, 21f, md),
+        titleLarge = base.titleLarge.m(17f, 23f, sb),
+        titleMedium = base.titleMedium.m(14.5f, 20f, md),
         titleSmall = base.titleSmall.m(13.5f, 19f, md),
-        bodyLarge = base.bodyLarge.m(14.5f, 21f, n),
+        bodyLarge = base.bodyLarge.m(14f, 20f, n),
         bodyMedium = base.bodyMedium.m(14f, 20f, n),
         bodySmall = base.bodySmall.m(12f, 17f, n),
         labelLarge = base.labelLarge.m(13.5f, 18f, md),

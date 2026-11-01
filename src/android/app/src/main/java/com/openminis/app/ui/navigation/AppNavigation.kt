@@ -1745,6 +1745,26 @@ fun AppNavigation(
                 onOpen = { id -> navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit(id)) },
                 onNew = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit("new")) },
                 onAudit = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.AUDIT) },
+                onDiscover = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER) },
+                onService = { key -> navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.service(key)) },
+            )
+        }
+        // [fork/mibot-v4] Auto-discover & connect, and one service's accounts.
+        composable(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER) {
+            com.openminis.app.mibot.vault.VaultDiscoverScreen(
+                onBack = { navController.safePopBackStack() },
+                onManual = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit("new")) },
+            )
+        }
+        composable(
+            com.openminis.app.mibot.vault.VaultRoutes.SERVICE,
+            arguments = listOf(navArgument("sid") { type = NavType.StringType }),
+        ) { entry ->
+            com.openminis.app.mibot.vault.VaultServiceScreen(
+                key = entry.arguments?.getString("sid").orEmpty(),
+                onBack = { navController.safePopBackStack() },
+                onOpen = { id -> navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.edit(id)) },
+                onDiscover = { navController.safeNavigate(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER) },
             )
         }
         composable(
@@ -1796,6 +1816,8 @@ fun AppNavigation(
                 onShared = { navController.safeNavigate(Routes.SHARED_FOLDERS) },
                 onStorage = { navController.safeNavigate(Routes.BACKUP) },
                 onManage = { navController.safeNavigate(Routes.ROOTFS_MANAGEMENT) },
+                onMirrors = { navController.safeNavigate(Routes.ROOTFS_MANAGEMENT) },
+                onOpenTerminalCommand = { cmd -> navController.safeNavigate(Routes.terminal(cmd)) },
             )
         }
     }

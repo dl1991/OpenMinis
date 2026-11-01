@@ -81,6 +81,10 @@ data class VaultEntry(
     /** Site manifest used for status / check-in; null = auto-match by site. */
     val manifestId: String? = null,
     val status: VaultStatus? = null,
+    /** [fork/mibot-v4] Catalog service id (assets/mibot/services.json); null = match by site. */
+    val serviceId: String? = null,
+    /** [fork/mibot-v4] What the secret is: api_key / cookie / oauth / password. */
+    val kind: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
 ) {
@@ -96,6 +100,8 @@ data class VaultEntry(
         put("permission", permission.name)
         manifestId?.let { put("manifestId", it) }
         status?.let { put("status", it.toJson()) }
+        serviceId?.let { put("serviceId", it) }
+        kind?.let { put("kind", it) }
         put("createdAt", createdAt)
         put("updatedAt", updatedAt)
     }
@@ -109,6 +115,8 @@ data class VaultEntry(
         put("has_secret", hasSecret)
         put("permission", permission.name.lowercase())
         if (notes.isNotBlank()) put("notes", notes)
+        serviceId?.let { put("service", it) }
+        kind?.let { put("kind", it) }
         status?.let { put("status", it.toJson()) }
     }
 
@@ -123,6 +131,8 @@ data class VaultEntry(
             permission = runCatching { VaultPermission.valueOf(o.optString("permission")) }.getOrDefault(VaultPermission.ASK),
             manifestId = o.optStringOrNull("manifestId"),
             status = VaultStatus.fromJson(o.optJSONObject("status")),
+            serviceId = o.optStringOrNull("serviceId"),
+            kind = o.optStringOrNull("kind"),
             createdAt = o.optLong("createdAt", System.currentTimeMillis()),
             updatedAt = o.optLong("updatedAt", System.currentTimeMillis()),
         )

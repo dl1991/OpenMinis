@@ -100,31 +100,33 @@ fun GlassFeedPage() {
         item {
             Text(
                 stringResource(R.string.glass_feed_desc),
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = com.openminis.app.mibot.design.MibotType.Secondary,
+                lineHeight = com.openminis.app.mibot.design.MibotType.SecondaryLine,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
         }
         items(posts) { body ->
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(22.dp),
-                colors = cardColors(),
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Initial(appName, accent)
-                        Spacer(Modifier.width(10.dp))
-                        Text(appName, fontWeight = FontWeight.SemiBold, fontSize = com.openminis.app.mibot.design.MibotType.Body)
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Text(stringResource(body), style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                        Icon(Icons.Outlined.FavoriteBorder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
-                        Icon(Icons.AutoMirrored.Outlined.Chat, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
-                        Icon(Icons.Outlined.DeleteOutline, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Dense))
-                    }
+            // [fork/mibot-v4] Same frosted card + compact type as every Mibot page.
+            com.openminis.app.mibot.design.MibotCard(padding = PaddingValues(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Initial(appName, accent, 30)
+                    Spacer(Modifier.width(10.dp))
+                    Text(appName, fontWeight = FontWeight.SemiBold, fontSize = com.openminis.app.mibot.design.MibotType.Body, color = MaterialTheme.colorScheme.onSurface)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    stringResource(body),
+                    fontSize = com.openminis.app.mibot.design.MibotType.Body,
+                    lineHeight = com.openminis.app.mibot.design.MibotType.BodyLine,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+                    val tint = com.openminis.app.mibot.design.MibotTokens.iconTint()
+                    com.openminis.app.mibot.design.Glyph(com.openminis.app.mibot.design.LineIcons.Heart, size = com.openminis.app.mibot.design.MibotIcon.Dense, tint = tint)
+                    com.openminis.app.mibot.design.Glyph(com.openminis.app.mibot.design.LineIcons.MessageCircle, size = com.openminis.app.mibot.design.MibotIcon.Dense, tint = tint)
+                    com.openminis.app.mibot.design.Glyph(com.openminis.app.mibot.design.LineIcons.Trash2, size = com.openminis.app.mibot.design.MibotIcon.Dense, tint = tint)
                 }
             }
         }

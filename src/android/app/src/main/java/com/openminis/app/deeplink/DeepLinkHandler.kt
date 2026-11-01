@@ -201,7 +201,11 @@ object DeepLinkHandler {
             // [fork/glass-ui] Backdrop & Glass settings.
             "backdrop", "glass" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.ui.glass.GlassRoutes.BACKDROP)
             // [fork/mibot-v2] Mibot pages.
-            "vault" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.LIST)
+            "vault", "accounts" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.LIST)
+            // [fork/mibot-v4] Auto-discover flow, and a page per settings screen for CI screenshots.
+            "vault-discover", "discover" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.DISCOVER)
+            "vault-add", "add-account" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.vault.VaultRoutes.edit("new"))
+            "rootfs" -> DeepLinkAction.OpenSettingsScreen(Routes.ROOTFS_MANAGEMENT)
             "gateway" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.gateway.GatewayRoutes.GATEWAY)
             "sandbox" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.sandbox.SandboxRoutes.SANDBOX)
             "virtual-display", "vd", "background-control" -> DeepLinkAction.OpenSettingsScreen(com.openminis.app.mibot.phone.VdRoutes.PAGE)

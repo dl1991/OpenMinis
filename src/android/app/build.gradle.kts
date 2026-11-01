@@ -40,8 +40,8 @@ android {
         applicationId = "com.dl1991.mibot"
         minSdk = 26
         targetSdk = 35
-        versionCode = 38
-        versionName = "1.16"
+        versionCode = 39
+        versionName = "1.17"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -474,6 +474,9 @@ dependencies {
     // 1.6.x is the line built against Kotlin 2.1 / Compose 1.8, matching this
     // project's Kotlin 2.1.0 toolchain.
     implementation("dev.chrisbanes.haze:haze:1.6.10")
+
+    // [fork/mibot-v4] Daily account check-in schedule.
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     // Coil (image loading)
     implementation("io.coil-kt:coil-compose:2.7.0")

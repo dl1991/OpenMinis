@@ -151,9 +151,33 @@ object MibotTokens {
     fun hairline(): Color =
         if (LocalMibotDark.current) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.07f)
 
+    /** [fork/mibot-v4] Frosted card fill: translucent so the sky shows through. */
     @Composable
     @ReadOnlyComposable
-    fun card(): Color = MaterialTheme.colorScheme.surfaceContainerLow
+    fun card(): Color = if (LocalMibotDark.current) Color(0xB81A1F2B) else Color(0xB8FFFFFF)
+
+    /** Muted tint for every line icon in rows (one consistent colour, no multicolour). */
+    @Composable
+    @ReadOnlyComposable
+    fun iconTint(): Color = MaterialTheme.colorScheme.onSurfaceVariant
+
+    /** Neutral tile behind grid icons. */
+    @Composable
+    @ReadOnlyComposable
+    fun tile(): Color = if (LocalMibotDark.current) Color.White.copy(alpha = 0.07f) else Color(0x14243048)
+
+    /** Field fill inside cards. */
+    @Composable
+    @ReadOnlyComposable
+    fun field(): Color = if (LocalMibotDark.current) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.55f)
+
+    @Composable
+    @ReadOnlyComposable
+    fun okColor(): Color = if (LocalMibotDark.current) Color(0xFF6FD39A) else Color(0xFF1F8A4C)
+
+    @Composable
+    @ReadOnlyComposable
+    fun warnColor(): Color = if (LocalMibotDark.current) Color(0xFFF2B35B) else Color(0xFFB26A00)
 
     /** Brick-red accent (salmon on the night variant). */
     @Composable
@@ -211,7 +235,7 @@ fun MibotTopBar(title: String, onBack: (() -> Unit)?, actions: @Composable RowSc
                     .semantics { contentDescription = "Back" },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(MibotIcon.Dense))
+                Glyph(LineIcons.ArrowLeft, size = MibotIcon.Dense, tint = MaterialTheme.colorScheme.onSurface)
             }
         }
         Text(
@@ -291,25 +315,24 @@ fun MibotSectionHeader(text: String, actionLabel: String? = null, onAction: (() 
 }
 
 /**
- * Icon chip. [filled] = solid coloured circle with a white glyph (apps grid);
- * otherwise a soft tinted round-square with a coloured glyph (list rows).
+ * [fork/mibot-v4] Icon chip. Every icon is drawn from the refined line set
+ * (Material vectors are mapped by name) in ONE muted tint — no multicolour.
+ * [filled] = a neutral frosted tile (apps grid); otherwise the bare glyph
+ * (list rows). [color] is kept for source compatibility and ignored.
  */
 @Composable
-fun IconChip(icon: ImageVector, color: Color, size: Dp = MibotIcon.RowChip, filled: Boolean = false, iconSize: Dp = if (filled) MibotIcon.Standard else MibotIcon.Dense) {
-    val shape = if (filled) CircleShape else RoundedCornerShape(size * 0.32f)
+fun IconChip(icon: ImageVector, color: Color, size: Dp = MibotIcon.RowChip, filled: Boolean = false, iconSize: Dp = if (filled) MibotIcon.Standard else MibotIcon.Standard) {
+    val tint = if (filled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f) else MibotTokens.iconTint()
+    val line = MibotIcons.lineFor(icon)
+    val shape = RoundedCornerShape(size * 0.3f)
     Box(
         Modifier
-            .size(size)
-            .clip(shape)
-            .background(if (filled) color else color.copy(alpha = if (LocalMibotDark.current) 0.26f else 0.15f)),
+            .size(if (filled) size else if (size > 28.dp) 28.dp else size)
+            .then(if (filled) Modifier.clip(shape).background(MibotTokens.tile()).border(0.5.dp, MibotTokens.hairline(), shape) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = if (filled) Color.White else if (LocalMibotDark.current) lighten(color) else color,
-            modifier = Modifier.size(iconSize),
-        )
+        if (line != null) Glyph(line, size = iconSize, tint = tint)
+        else Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
     }
 }
 
@@ -356,17 +379,12 @@ fun MibotRow(
                 trailing()
             }
             if (chevron) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(MibotIcon.Dense),
-                )
+                Glyph(LineIcons.ChevronRight, size = MibotIcon.Small, tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
             }
         }
         if (showDivider) {
             HorizontalDivider(
-                modifier = Modifier.padding(start = if (icon != null) MibotIcon.RowChip + MibotSpace.M * 2 + 2.dp else MibotSpace.M + 2.dp, end = MibotSpace.M + 2.dp),
+                modifier = Modifier.padding(start = if (icon != null) 28.dp + MibotSpace.M * 2 + 2.dp else MibotSpace.M + 2.dp, end = MibotSpace.M + 2.dp),
                 thickness = 0.5.dp,
                 color = MibotTokens.hairline(),
             )
@@ -416,8 +434,8 @@ enum class ChipKind { OK, WARN, ERR, NEUTRAL, ACCENT }
 fun StatusChip(text: String, kind: ChipKind) {
     val accent = MibotTokens.accent()
     val c = when (kind) {
-        ChipKind.OK -> MibotTokens.Ok
-        ChipKind.WARN -> MibotTokens.Warn
+        ChipKind.OK -> MibotTokens.okColor()
+        ChipKind.WARN -> MibotTokens.warnColor()
         ChipKind.ERR -> MibotTokens.Err
         ChipKind.ACCENT -> accent
         ChipKind.NEUTRAL -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -427,11 +445,11 @@ fun StatusChip(text: String, kind: ChipKind) {
         text,
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(c.copy(alpha = if (dark) 0.24f else 0.14f))
+            .background(c.copy(alpha = if (dark) 0.22f else 0.14f))
             .padding(horizontal = 8.dp, vertical = 2.dp),
         fontSize = MibotType.Caption,
-        fontWeight = FontWeight.Medium,
-        color = if (dark) lighten(c) else c,
+        fontWeight = FontWeight.SemiBold,
+        color = if (kind == ChipKind.ERR && dark) lighten(c) else c,
         maxLines = 1,
     )
 }

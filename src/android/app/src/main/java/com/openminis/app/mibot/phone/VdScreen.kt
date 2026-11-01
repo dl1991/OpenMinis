@@ -64,6 +64,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.openminis.app.accessibility.MinisAccessibilityService
 import com.openminis.app.mibot.design.ChipKind
+import com.openminis.app.mibot.design.PermState
+import com.openminis.app.mibot.design.PermissionRow
+import com.openminis.app.mibot.design.PermissionSummary
 import com.openminis.app.mibot.design.MibotButton
 import com.openminis.app.mibot.design.MibotCard
 import com.openminis.app.mibot.design.MibotFootnote
@@ -127,6 +130,17 @@ fun VdScreen(onBack: () -> Unit) {
     val notifOn = remember(tick) { ctx.getSystemService(NotificationManager::class.java).areNotificationsEnabled() }
     val batteryOn = remember(tick) { ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName) }
     val devOn = remember(tick) { DeveloperSettings.developerOptions(ctx) }
+    var a11yListed by remember { mutableStateOf(false) }
+    LaunchedEffect(tick, helper) {
+        val sh = helper
+        a11yListed = if (sh == null) a11yOn else kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val me = ComponentName(ctx.packageName, MinisAccessibilityService::class.java.name).flattenToString()
+                sh.runCommand("settings get secure enabled_accessibility_services").getString("output").orEmpty()
+                    .trim().split(':').any { it.equals(me, ignoreCase = true) }
+            }.getOrDefault(false)
+        }
+    }
     val wdOn = remember(tick) { DeveloperSettings.wirelessDebugging(ctx) }
 
     LaunchedEffect(Unit) {
@@ -200,30 +214,92 @@ fun VdScreen(onBack: () -> Unit) {
         }
 
         // ---------------------------------------------------------- status
+        // [fork/mibot-v4] Every row states clearly whether it is on; the
+        // states are re-read on resume and every 2 s, so coming back from
+        // system settings updates them at once.
+        val helperOn = helper != null
+        val granted = listOf(helperOn, a11yOn, overlayOn, notifOn, batteryOn).count { it }
         MibotSectionHeader(t("权限状态", "Permissions"))
+        PermissionSummary(granted, 5)
+        com.openminis.app.mibot.design.MibotSpacer(6.dp)
         MibotCard {
-            val helperLine = when {
-                !phone.supported -> t("需要 Android 12 及以上", "Needs Android 12+") to ChipKind.ERR
-                helper != null -> t("已连接（${if (phone.hub.source == "shizuku") "Shizuku" else "无线调试"}）", "Connected (${phone.hub.source})") to ChipKind.OK
-                status is BuiltinShellStatus.Connecting -> t("连接中", "Connecting") to ChipKind.WARN
-                status is BuiltinShellStatus.WirelessDebuggingOff -> t("无线调试已关", "Wireless debugging off") to ChipKind.WARN
-                status is BuiltinShellStatus.Failed -> t("出错", "Error") to ChipKind.ERR
-                else -> t("未配对", "Not paired") to ChipKind.NEUTRAL
+            val helperText = when {
+                !phone.supported -> t("不可用", "Unavailable")
+                helperOn -> t("已连接 · ${if (phone.hub.source == "shizuku") "Shizuku" else "无线调试"}", "Connected · ${phone.hub.source}")
+                status is BuiltinShellStatus.Connecting -> t("连接中", "Connecting")
+                status is BuiltinShellStatus.WirelessDebuggingOff -> t("无线调试已关", "Wireless debugging off")
+                status is BuiltinShellStatus.Failed -> t("出错", "Error")
+                else -> t("未连接", "Not connected")
             }
-            MibotRow(t("内置助手（ADB 级）", "Built-in helper (ADB level)"),
-                (status as? BuiltinShellStatus.Failed)?.let { PairingCopy.failure(ctx, it.reason) }
+            PermissionRow(
+                t("内置助手（ADB 级）", "Built-in helper (ADB level)"),
+                if (!phone.supported) t("需要 Android 12 及以上", "Needs Android 12+")
+                else (status as? BuiltinShellStatus.Failed)?.let { PairingCopy.failure(ctx, it.reason) }
                     ?: t("经本机无线调试启动，无需电脑，之后自动重连", "Started via this phone's Wireless Debugging — no PC; reconnects on its own"),
-                Icons.Outlined.PhonelinkSetup, MibotTokens.Brick, showDivider = true,
-                trailing = { StatusChip(helperLine.first, helperLine.second) }, chevron = false)
-            val sh = when (shizuku.state) {
-                ShizukuManager.State.READY -> t("已授权", "Granted") to ChipKind.OK
-                ShizukuManager.State.NEED_PERMISSION -> t("待授权", "Grant") to ChipKind.WARN
-                ShizukuManager.State.NOT_RUNNING -> t("未运行", "Not running") to ChipKind.WARN
-                ShizukuManager.State.NOT_INSTALLED -> t("未安装", "Not installed") to ChipKind.NEUTRAL
+                Icons.Outlined.PhonelinkSetup,
+                state = when { !phone.supported -> PermState.UNAVAILABLE; helperOn -> PermState.GRANTED; else -> PermState.MISSING },
+                stateText = helperText,
+                actionLabel = if (helperOn || !phone.supported) null else t("去配对", "Pair"),
+                onAction = if (helperOn || !phone.supported) null else ({ scope.launch { phone.builtin.engine.retry() } }),
+                showDivider = true,
+            )
+            PermissionRow(
+                t("无障碍", "Accessibility"),
+                t("读取虚拟屏界面树；无助手时在主屏操作（需确认）", "Reads the hidden display's UI; main-screen fallback (asks first)"),
+                Icons.Outlined.Accessibility,
+                state = if (a11yOn) PermState.GRANTED else PermState.MISSING,
+                actionLabel = t("去开启", "Turn on"),
+                onAction = { ctx.openFirst(listOf(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))) },
+                showDivider = true,
+            )
+            PermissionRow(
+                t("悬浮窗", "Overlay"),
+                t("主屏模式下显示「正在操作」提示", "Shows the “operating” pill in main-screen mode"),
+                Icons.Outlined.PictureInPicture,
+                state = if (overlayOn) PermState.GRANTED else PermState.MISSING,
+                stateText = if (overlayOn) t("已允许", "Allowed") else null,
+                actionLabel = t("去开启", "Turn on"),
+                onAction = { ctx.openFirst(listOf(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}")))) },
+                showDivider = true,
+            )
+            PermissionRow(
+                t("通知", "Notifications"),
+                t("配对码输入与常驻停止按钮", "Pairing-code input and the Stop button"),
+                Icons.Outlined.Notifications,
+                state = if (notifOn) PermState.GRANTED else PermState.MISSING,
+                stateText = if (notifOn) t("已允许", "Allowed") else null,
+                actionLabel = t("去开启", "Turn on"),
+                onAction = { ctx.openFirst(listOf(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName))) },
+                showDivider = true,
+            )
+            PermissionRow(
+                t("电池优化豁免", "Battery exemption"),
+                t("后台长时间操作不被系统杀掉", "Keeps long background tasks alive"),
+                Icons.Outlined.BatteryChargingFull,
+                state = if (batteryOn) PermState.GRANTED else PermState.MISSING,
+                stateText = if (batteryOn) t("已豁免", "Exempt") else null,
+                actionLabel = t("去开启", "Turn on"),
+                onAction = { ctx.openFirst(listOf(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")), Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))) },
+                showDivider = true,
+            )
+            val shState = when (shizuku.state) {
+                ShizukuManager.State.READY -> PermState.GRANTED
+                ShizukuManager.State.NEED_PERMISSION, ShizukuManager.State.NOT_RUNNING -> PermState.MISSING
+                ShizukuManager.State.NOT_INSTALLED -> PermState.UNAVAILABLE
             }
-            MibotRow("Shizuku", t("可选：已装 Shizuku 时可用它启动助手", "Optional: start the helper through Shizuku"),
-                Icons.Outlined.AdminPanelSettings, MibotTokens.Slate, showDivider = true,
-                onClick = {
+            PermissionRow(
+                "Shizuku",
+                t("可选：已装 Shizuku 时可用它启动助手", "Optional: start the helper through Shizuku"),
+                Icons.Outlined.AdminPanelSettings,
+                state = shState,
+                stateText = when (shizuku.state) {
+                    ShizukuManager.State.READY -> t("已授权", "Granted")
+                    ShizukuManager.State.NEED_PERMISSION -> t("待授权", "Not granted")
+                    ShizukuManager.State.NOT_RUNNING -> t("未运行", "Not running")
+                    ShizukuManager.State.NOT_INSTALLED -> t("未安装（可选）", "Not installed (optional)")
+                },
+                actionLabel = if (shState == PermState.MISSING) t("去开启", "Turn on") else null,
+                onAction = {
                     when (shizuku.state) {
                         ShizukuManager.State.NEED_PERMISSION -> ShizukuManager.requestPermission()
                         ShizukuManager.State.READY -> scope.launch {
@@ -234,23 +310,7 @@ fun VdScreen(onBack: () -> Unit) {
                         ShizukuManager.State.NOT_INSTALLED -> ShizukuManager.openInstallPage(ctx)
                     }
                 },
-                trailing = { StatusChip(sh.first, sh.second) })
-            MibotRow(t("无障碍", "Accessibility"), t("读取虚拟屏界面树；无助手时在主屏操作（需确认）", "Reads the hidden display's UI; main-screen fallback (asks first)"),
-                Icons.Outlined.Accessibility, MibotTokens.Green, showDivider = true,
-                onClick = { ctx.openFirst(listOf(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))) },
-                trailing = { StatusChip(if (a11yOn) t("已开启", "On") else t("未开启", "Off"), if (a11yOn) ChipKind.OK else ChipKind.NEUTRAL) })
-            MibotRow(t("悬浮窗", "Overlay"), t("主屏模式下显示「正在操作」提示", "Shows the “operating” pill in main-screen mode"),
-                Icons.Outlined.PictureInPicture, MibotTokens.Purple, showDivider = true,
-                onClick = { ctx.openFirst(listOf(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}")))) },
-                trailing = { StatusChip(if (overlayOn) t("已允许", "Allowed") else t("未允许", "Off"), if (overlayOn) ChipKind.OK else ChipKind.NEUTRAL) })
-            MibotRow(t("通知", "Notifications"), t("配对码输入与常驻停止按钮", "Pairing-code input and the Stop button"),
-                Icons.Outlined.Notifications, MibotTokens.Amber, showDivider = true,
-                onClick = { ctx.openFirst(listOf(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName))) },
-                trailing = { StatusChip(if (notifOn) t("已允许", "Allowed") else t("未允许", "Off"), if (notifOn) ChipKind.OK else ChipKind.WARN) })
-            MibotRow(t("电池优化豁免", "Battery exemption"), t("后台长时间操作不被系统杀掉", "Keeps long background tasks alive"),
-                Icons.Outlined.BatteryChargingFull, MibotTokens.Teal,
-                onClick = { ctx.openFirst(listOf(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")), Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))) },
-                trailing = { StatusChip(if (batteryOn) t("已豁免", "Exempt") else t("未豁免", "Off"), if (batteryOn) ChipKind.OK else ChipKind.NEUTRAL) })
+            )
         }
 
         // ---------------------------------------------------------- pairing wizard
@@ -302,22 +362,54 @@ fun VdScreen(onBack: () -> Unit) {
             }
         } else if (helper != null) {
             MibotSectionHeader(t("提升权限（经助手，逐项确认）", "Raise permissions (via helper, each confirmed)"))
+            val basicCount = listOf(notifOn, overlayOn, batteryOn).count { it }
+            val secureOn = remember(tick) {
+                ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
             MibotCard {
-                MibotRow(t("授予通知、悬浮窗、电池白名单", "Grant notifications, overlay, battery whitelist"),
+                PermissionRow(
+                    t("授予通知、悬浮窗、电池白名单", "Grant notifications, overlay, battery whitelist"),
                     t("为 Mibot 自己执行 pm grant / appops / deviceidle", "Runs pm grant / appops / deviceidle for Mibot itself"),
-                    Icons.Outlined.Notifications, MibotTokens.Amber, showDivider = true,
-                    onClick = { scope.launch { elevate(ctx, ElevateKind.BASIC) } })
-                MibotRow(t("开启 Mibot 无障碍服务", "Enable Mibot's accessibility service"),
-                    t("追加到系统无障碍列表，用于读取虚拟屏界面", "Appends it to the enabled list to read the hidden display"),
-                    Icons.Outlined.Accessibility, MibotTokens.Green, showDivider = true,
-                    onClick = { scope.launch { elevate(ctx, ElevateKind.A11Y) } })
-                MibotRow(t("授予 WRITE_SECURE_SETTINGS", "Grant WRITE_SECURE_SETTINGS"),
+                    Icons.Outlined.Notifications,
+                    state = when (basicCount) { 3 -> PermState.GRANTED; 0 -> PermState.MISSING; else -> PermState.PARTIAL },
+                    stateText = when (basicCount) { 3 -> t("已授予 3/3", "Granted 3/3"); 0 -> t("未授予 0/3", "Not granted 0/3"); else -> t("部分 $basicCount/3", "Partial $basicCount/3") },
+                    actionLabel = if (basicCount < 3) t("授予", "Grant") else null,
+                    onAction = { scope.launch { elevate(ctx, ElevateKind.BASIC); tick++ } },
+                    showDivider = true,
+                )
+                PermissionRow(
+                    t("开启 Mibot 无障碍服务", "Enable Mibot's accessibility service"),
+                    when {
+                        a11yOn -> t("已在系统列表中，服务已绑定", "Listed and bound")
+                        a11yListed -> t("已写入系统列表，等待系统绑定服务（可在无障碍设置里开关一次）", "Listed; waiting for the system to bind it (toggle it once in Accessibility settings)")
+                        else -> t("追加到系统无障碍列表（保留其他服务），用于读取虚拟屏界面", "Appends it to the enabled list (keeps other services) to read the hidden display")
+                    },
+                    Icons.Outlined.Accessibility,
+                    state = when { a11yOn -> PermState.GRANTED; a11yListed -> PermState.PARTIAL; else -> PermState.MISSING },
+                    stateText = when { a11yOn -> t("已授予", "Granted"); a11yListed -> t("已写入·未绑定", "Listed · not bound"); else -> t("未授予", "Not granted") },
+                    actionLabel = if (!a11yOn) t("开启", "Enable") else null,
+                    onAction = { scope.launch { elevate(ctx, ElevateKind.A11Y); tick++ } },
+                    showDivider = true,
+                )
+                PermissionRow(
+                    t("授予 WRITE_SECURE_SETTINGS", "Grant WRITE_SECURE_SETTINGS"),
                     t("仅在需要自动恢复无障碍时使用，可随时撤销", "Only to restore accessibility on its own; revocable"),
-                    Icons.Outlined.AdminPanelSettings, MibotTokens.Slate, showDivider = true,
-                    onClick = { scope.launch { elevate(ctx, ElevateKind.SECURE) } })
-                MibotRow(t("断开助手", "Disconnect helper"), t("释放所有虚拟屏并退出助手进程", "Releases every display and stops the helper"),
-                    Icons.Outlined.Cable, MibotTokens.Red,
-                    onClick = { VdController.close(ctx); runCatching { helper?.destroy() } })
+                    Icons.Outlined.AdminPanelSettings,
+                    state = if (secureOn) PermState.GRANTED else PermState.MISSING,
+                    stateText = if (secureOn) t("已授予", "Granted") else t("未授予", "Not granted"),
+                    actionLabel = if (!secureOn) t("授予", "Grant") else null,
+                    onAction = { scope.launch { elevate(ctx, ElevateKind.SECURE); tick++ } },
+                    showDivider = true,
+                )
+                PermissionRow(
+                    t("断开助手", "Disconnect helper"),
+                    t("释放所有虚拟屏并退出助手进程", "Releases every display and stops the helper"),
+                    Icons.Outlined.Cable,
+                    state = PermState.GRANTED,
+                    stateText = t("已连接", "Connected"),
+                    actionLabel = null,
+                    onAction = { VdController.close(ctx); runCatching { helper?.destroy() } },
+                )
             }
         }
         MibotFootnote(t(
@@ -331,9 +423,10 @@ fun VdScreen(onBack: () -> Unit) {
             if (log.isEmpty()) {
                 Text(t("还没有记录", "Nothing yet"), fontSize = MibotType.Secondary, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                log.takeLast(14).forEach {
-                    Text(it, fontSize = MibotType.Caption, lineHeight = 15.sp, fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
+                log.takeLast(16).forEach {
+                    Text(it, fontSize = 11.sp, lineHeight = 15.sp, fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurface, softWrap = true,
+                        modifier = Modifier.padding(vertical = 1.dp))
                 }
             }
         }
@@ -377,9 +470,17 @@ private suspend fun elevate(ctx: Context, kind: ElevateKind) {
             "dumpsys deviceidle whitelist +$pkg",
         )
         ElevateKind.A11Y -> {
+            // Fully qualified "com.dl1991.mibot/com.openminis.app.accessibility.MinisAccessibilityService".
             val me = ComponentName(pkg, MinisAccessibilityService::class.java.name).flattenToString()
+            val cls = MinisAccessibilityService::class.java.name
             val cur = sh.runCommand("settings get secure enabled_accessibility_services").getString("output").orEmpty().trim()
-            val list = cur.split(':').filter { it.isNotBlank() && it != "null" && it != me } + me
+            // Keep every other service; drop our own entry and stale copies of
+            // our service class registered under another (old) package name.
+            val list = cur.split(':').map { it.trim() }.filter {
+                it.isNotBlank() && it != "null" && !it.equals(me, ignoreCase = true) &&
+                    !(it.substringAfter('/', "") == cls || it.substringAfter('/', "") == ".accessibility.MinisAccessibilityService")
+            } + me
+            VdController.log("a11y: component $me; keeping ${list.size - 1} other service(s)")
             listOf("settings put secure enabled_accessibility_services '${list.joinToString(":")}'", "settings put secure accessibility_enabled 1")
         }
         ElevateKind.SECURE -> listOf("pm grant $pkg android.permission.WRITE_SECURE_SETTINGS")
@@ -391,7 +492,7 @@ private suspend fun elevate(ctx: Context, kind: ElevateKind) {
     if (!ok) return
     for (c in cmds) {
         val r = sh.runCommand(c)
-        VdController.log("$ ${c.take(60)} -> ${r.getInt("exitCode")}${r.getString("output")?.trim()?.take(60)?.let { if (it.isNotEmpty()) " $it" else "" } ?: ""}")
+        VdController.log("$ $c -> ${r.getInt("exitCode")}${r.getString("output")?.trim()?.take(200)?.let { if (it.isNotEmpty()) " $it" else "" } ?: ""}")
     }
 }
 

@@ -73,8 +73,12 @@ enum class GlassTab(val labelRes: Int, val icon: ImageVector, val selectedIcon: 
     SETTINGS(R.string.glass_tab_settings, Icons.Outlined.Settings, Icons.Filled.Settings),
 }
 
-/** Height of the docked bar above the navigation-bar inset. */
-val GlassTabBarHeight: Dp = 60.dp
+/** [fork/mibot-v4] Floating capsule height and its gap to the screen bottom. */
+val GlassTabBarCapsule: Dp = 58.dp
+val GlassTabBarMargin: Dp = 10.dp
+
+/** Space the floating bar takes above the navigation-bar inset. */
+val GlassTabBarHeight: Dp = GlassTabBarCapsule + GlassTabBarMargin
 
 /**
  * Bottom space a page under the bar should leave (content padding for lists
@@ -163,6 +167,23 @@ fun GlassScreenBackdrop() {
     }
 }
 
+/** [fork/mibot-v4] Refined line glyph for each tab. */
+private fun GlassTab.glyph(): com.openminis.app.mibot.design.LineGlyph = with(com.openminis.app.mibot.design.LineIcons) {
+    when (this@glyph) {
+        GlassTab.CHATS -> MessageCircle
+        GlassTab.FEED -> Newspaper
+        GlassTab.IDEAS -> Lightbulb
+        GlassTab.BOTS -> Bot
+        GlassTab.SETTINGS -> Settings
+    }
+}
+
+/**
+ * [fork/mibot-v4] Floating frosted-glass tab bar: a rounded capsule inset
+ * from the screen edges that really blurs the page scrolling beneath it
+ * (Haze RenderEffect on API 31+; translucent tinted scrim + hairline on 30),
+ * a top highlight rim, line icons (duotone + brick-red when selected).
+ */
 @Composable
 private fun GlassTabBar(
     current: GlassTab,
@@ -172,20 +193,30 @@ private fun GlassTabBar(
     modifier: Modifier = Modifier,
 ) {
     val selectedColor = MaterialTheme.colorScheme.primary
-    val idleColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-    val hairline = GlassStyles.hairline(style)
-    Column(
+    val idleColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val dark = style == GlassStyle.DUSK
+    val shape = RoundedCornerShape(26.dp)
+    val rim = Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = if (dark) 0.22f else 0.85f),
+            GlassStyles.hairline(style),
+        ),
+    )
+    Box(
         modifier
             .fillMaxWidth()
-            .hazeEffect(state = haze, style = GlassStyles.bar(style))
-            .drawBehind {
-                drawLine(hairline, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1f)
-            },
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(start = 12.dp, end = 12.dp, bottom = GlassTabBarMargin),
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(GlassTabBarHeight),
+                .height(GlassTabBarCapsule)
+                .clip(shape)
+                .hazeEffect(state = haze, style = GlassStyles.bar(style)) {
+                    blurEnabled = android.os.Build.VERSION.SDK_INT >= 31
+                }
+                .border(1.dp, rim, shape),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             GlassTab.entries.forEach { tab ->
@@ -208,23 +239,30 @@ private fun GlassTabBar(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon(
-                        if (selected) tab.selectedIcon else tab.icon,
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(com.openminis.app.mibot.design.MibotIcon.Nav),
-                    )
+                    Box(
+                        Modifier
+                            .size(width = 48.dp, height = 28.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (selected) selectedColor.copy(alpha = if (dark) 0.20f else 0.12f) else Color.Transparent),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        com.openminis.app.mibot.design.Glyph(
+                            tab.glyph(),
+                            size = 22.dp,
+                            tint = color,
+                            duotone = selected,
+                        )
+                    }
                     Text(
                         label,
-                        fontSize = 10.5.sp,
+                        fontSize = 11.sp,
+                        lineHeight = 13.sp,
                         maxLines = 1,
                         color = color,
-                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                     )
                 }
             }
         }
-        // Fill continues under the system navigation bar.
-        Box(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars))
     }
 }

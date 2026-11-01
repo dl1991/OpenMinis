@@ -64,10 +64,13 @@ object VaultRoutes {
     const val LIST = "mibot_vault"
     const val EDIT = "mibot_vault_edit/{id}"
     const val AUDIT = "mibot_vault_audit"
+    const val DISCOVER = "mibot_vault_discover"
+    const val SERVICE = "mibot_vault_service/{sid}"
     fun edit(id: String) = "mibot_vault_edit/$id"
+    fun service(sid: String) = "mibot_vault_service/" + android.net.Uri.encode(sid)
 }
 
-private fun categoryIcon(cat: String): ImageVector = when (cat) {
+internal fun categoryIcon(cat: String): ImageVector = when (cat) {
     "AI 服务" -> Icons.Outlined.SmartToy
     "邮箱" -> Icons.Outlined.Email
     "云服务器" -> Icons.Outlined.Cloud
@@ -75,7 +78,7 @@ private fun categoryIcon(cat: String): ImageVector = when (cat) {
     else -> Icons.Outlined.Key
 }
 
-private fun categoryColor(cat: String) = when (cat) {
+internal fun categoryColor(cat: String) = when (cat) {
     "AI 服务" -> MibotTokens.Brick
     "邮箱" -> MibotTokens.Red
     "云服务器" -> MibotTokens.Green
@@ -84,14 +87,14 @@ private fun categoryColor(cat: String) = when (cat) {
 }
 
 @Composable
-private fun permLabel(p: VaultPermission): Pair<String, ChipKind> = when (p) {
+internal fun permLabel(p: VaultPermission): Pair<String, ChipKind> = when (p) {
     VaultPermission.AUTO -> t("自动使用", "Auto") to ChipKind.OK
     VaultPermission.ASK -> t("每次询问", "Ask") to ChipKind.WARN
     VaultPermission.DISABLED -> t("禁用", "Off") to ChipKind.NEUTRAL
 }
 
 @Composable
-private fun statusLabels(): Map<String, String> = mapOf(
+internal fun statusLabels(): Map<String, String> = mapOf(
     "balance" to t("余额", "Balance"),
     "points" to t("积分", "Points"),
     "credits" to t("额度", "Credits"),
@@ -99,99 +102,8 @@ private fun statusLabels(): Map<String, String> = mapOf(
     "expiry" to t("到期", "Expires"),
 )
 
-private fun ago(ts: Long): String =
+internal fun ago(ts: Long): String =
     if (ts <= 0) "" else DateUtils.getRelativeTimeSpanString(ts, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
-
-@Composable
-fun VaultListScreen(onBack: () -> Unit, onOpen: (String) -> Unit, onNew: () -> Unit, onAudit: () -> Unit) {
-    val ctx = LocalContext.current
-    val entries by remember { VaultStore.entries(ctx) }.collectAsState()
-    val scope = rememberCoroutineScope()
-    val all = t("全部", "All")
-    var filter by remember { mutableStateOf("") }
-    val sel = filter.ifEmpty { all }
-    var busy by remember { mutableStateOf(false) }
-    val categories = (VaultCategories.defaults + entries.map { it.category }).distinct()
-    val shown = if (sel == all) entries else entries.filter { it.category == sel }
-    val labels = statusLabels()
-
-    MibotScaffold(
-        title = t("账号台账", "Account Vault"),
-        onBack = onBack,
-        actions = {
-            IconButton(onClick = onAudit) { Icon(Icons.Outlined.History, t("使用记录", "Audit log"), tint = MaterialTheme.colorScheme.onBackground) }
-            IconButton(onClick = onNew) { Icon(Icons.Outlined.Add, t("添加账号", "Add account"), tint = MaterialTheme.colorScheme.onBackground) }
-        },
-    ) {
-        MibotFilterChips(listOf(all) + categories, sel) { filter = it }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MibotButton(t("全部签到", "Check in all"), enabled = !busy && shown.isNotEmpty(), modifier = Modifier.weight(1f), onClick = {
-                busy = true
-                scope.launch {
-                    var ok = 0; var manual = 0; var err = 0
-                    var firstManualUrl: String? = null
-                    for (e in shown) {
-                        val r = VaultSites.checkin(ctx, e, "user")
-                        when (r.state) {
-                            "ok" -> ok++
-                            "manual" -> { manual++; if (firstManualUrl == null) firstManualUrl = r.url }
-                            "error" -> err++
-                        }
-                    }
-                    busy = false
-                    Toast.makeText(ctx, tc(ctx, "签到完成：成功 $ok · 需手动 $manual · 失败 $err", "Check-in: $ok ok · $manual manual · $err failed"), Toast.LENGTH_LONG).show()
-                }
-            })
-            MibotButton(t("刷新状态", "Refresh status"), tonal = true, enabled = !busy && shown.isNotEmpty(), modifier = Modifier.weight(1f), onClick = {
-                busy = true
-                scope.launch {
-                    shown.forEach { VaultSites.refreshStatus(ctx, it, "user") }
-                    busy = false
-                }
-            })
-        }
-        if (shown.isEmpty()) {
-            MibotSpacer(24.dp)
-            MibotCard(padding = PaddingValues(20.dp)) {
-                Text(t("还没有账号", "No accounts yet"), fontSize = com.openminis.app.mibot.design.MibotType.TitleSmall, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.size(6.dp))
-                Text(
-                    t("添加网站或服务的登录信息。密码用 Android Keystore 加密保存，AI 只能按你设定的权限请求使用，永远看不到明文。",
-                        "Add logins for sites and services. Secrets are encrypted with the Android Keystore; the AI can only request to use them under the permission you set and never sees plaintext."),
-                    fontSize = com.openminis.app.mibot.design.MibotType.Body, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.size(12.dp))
-                MibotButton(t("添加账号", "Add account"), onClick = onNew)
-            }
-        }
-        shown.groupBy { it.category }.forEach { (cat, list) ->
-            MibotSectionHeader("$cat · ${list.size}")
-            MibotCard {
-                list.forEachIndexed { i, e ->
-                    val summary = e.status?.summary(labels).orEmpty().joinToString("  ") { "${it.first} ${it.second}" }
-                    val updated = e.status?.updatedAt?.takeIf { it > 0 }?.let { " · " + ago(it) } ?: ""
-                    val checkin = e.status?.lastCheckinState?.let { st ->
-                        when (st) { "ok" -> t(" · 已签到", " · checked in"); "manual" -> t(" · 需要手动", " · manual"); "error" -> t(" · 签到失败", " · check-in failed"); else -> "" }
-                    } ?: ""
-                    val (pl, pk) = permLabel(e.permission)
-                    MibotRow(
-                        title = e.site,
-                        subtitle = e.username + (if (summary.isNotEmpty()) "\n$summary$updated" else updated) + checkin,
-                        icon = categoryIcon(cat),
-                        color = categoryColor(cat),
-                        onClick = { onOpen(e.id) },
-                        showDivider = i < list.lastIndex,
-                        trailing = { StatusChip(pl, pk) },
-                    )
-                }
-            }
-        }
-        MibotFootnote(t(
-            "AI 通过 {{vault:ID}} 占位符或沙箱里的 vault 命令请求使用账号；每次使用都记入使用记录。支付、删除、以你名义发送等高风险操作总是需要确认。",
-            "The AI requests accounts via {{vault:ID}} placeholders or the `vault` CLI in the sandbox; every use is logged. Paying, deleting and sending as you always need confirmation.",
-        ))
-    }
-}
 
 @Composable
 fun VaultEditScreen(id: String, onBack: () -> Unit) {
@@ -227,35 +139,27 @@ fun VaultEditScreen(id: String, onBack: () -> Unit) {
 
     MibotScaffold(title = if (existing == null) t("添加账号", "Add account") else t("编辑账号", "Edit account"), onBack = onBack) {
         MibotSectionHeader(t("账号", "Account"))
-        MibotCard(padding = PaddingValues(16.dp)) {
-            OutlinedTextField(site, { site = it }, Modifier.fillMaxWidth(), label = { Text(t("网站 / 服务", "Site / service")) }, singleLine = true)
-            Spacer(Modifier.size(8.dp))
-            OutlinedTextField(username, { username = it }, Modifier.fillMaxWidth(), label = { Text(t("用户名 / 邮箱 / 手机号", "Username / email / phone")) }, singleLine = true)
-            Spacer(Modifier.size(8.dp))
-            OutlinedTextField(
-                secret, { secret = it }, Modifier.fillMaxWidth(),
-                label = { Text(t("密码 / Token / Cookie", "Password / token / cookie")) },
-                placeholder = { if (existing?.hasSecret == true) Text(t("已保存，留空则不修改", "Saved — leave blank to keep")) },
-                singleLine = true,
-                visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                trailingIcon = {
-                    IconButton(onClick = { showSecret = !showSecret }) {
-                        Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, null)
-                    }
-                },
+        MibotCard(padding = PaddingValues(14.dp)) {
+            com.openminis.app.mibot.design.GlassField(site, { site = it }, t("网站 / 服务", "Site / service"), placeholder = "openrouter.ai", keyboardType = KeyboardType.Uri)
+            Spacer(Modifier.size(10.dp))
+            com.openminis.app.mibot.design.GlassField(username, { username = it }, t("用户名 / 邮箱 / 手机号", "Username / email / phone"), autofill = "username", keyboardType = KeyboardType.Email)
+            Spacer(Modifier.size(10.dp))
+            com.openminis.app.mibot.design.GlassField(
+                secret, { secret = it }, t("密码 / Token / Cookie", "Password / token / cookie"),
+                placeholder = if (existing?.hasSecret == true) t("已保存，留空则不修改", "Saved — leave blank to keep") else null,
+                secret = true, autofill = "password",
             )
-            Spacer(Modifier.size(8.dp))
-            OutlinedTextField(notes, { notes = it }, Modifier.fillMaxWidth(), label = { Text(t("备注", "Notes")) }, minLines = 2)
+            Spacer(Modifier.size(10.dp))
+            com.openminis.app.mibot.design.GlassField(notes, { notes = it }, t("备注", "Notes"), singleLine = false, minLines = 2)
         }
+        MibotFootnote(t("可用系统自动填充（密码管理器）直接填入账号和密码。", "Your Autofill / password manager can fill the username and password."))
 
         MibotSectionHeader(t("分类", "Category"))
         MibotFilterChips(VaultCategories.defaults, category) { category = it }
-        OutlinedTextField(
-            category, { category = it },
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            label = { Text(t("自定义分类", "Custom category")) }, singleLine = true,
-        )
+        Spacer(Modifier.size(6.dp))
+        Column(Modifier.padding(horizontal = 14.dp)) {
+            com.openminis.app.mibot.design.GlassField(category, { category = it }, t("自定义分类", "Custom category"))
+        }
 
         MibotSectionHeader(t("AI 使用权限", "AI permission"))
         MibotCard {
@@ -265,10 +169,7 @@ fun VaultEditScreen(id: String, onBack: () -> Unit) {
                     VaultPermission.ASK -> t("每次询问", "Ask every time") to t("每次使用前弹窗确认", "Confirm before each use")
                     VaultPermission.DISABLED -> t("禁用", "Disabled") to t("AI 不能使用此账号", "The AI cannot use this account")
                 }
-                MibotRow(
-                    title = title, subtitle = desc, onClick = { permission = p }, showDivider = i < 2, chevron = false,
-                    trailing = { if (permission == p) StatusChip("✓", ChipKind.ACCENT) },
-                )
+                com.openminis.app.mibot.design.MibotRadioRow(title, desc, selected = permission == p, onClick = { permission = p }, showDivider = i < 2)
             }
         }
 

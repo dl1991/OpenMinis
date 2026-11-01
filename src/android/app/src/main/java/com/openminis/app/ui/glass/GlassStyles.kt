@@ -23,10 +23,12 @@ object GlassStyles {
     @ReadOnlyComposable
     fun bar(style: GlassStyle): HazeStyle = HazeStyle(
         backgroundColor = tint(style),
-        tints = listOf(HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.58f else 0.70f))),
-        blurRadius = 24.dp,
-        noiseFactor = 0.04f,
-        fallbackTint = HazeTint(tint(style).copy(alpha = 0.95f)),
+        // [fork/mibot-v4] Lighter tint so the blurred page reads through the
+        // floating capsule; API 30 (no RenderEffect) gets a translucent scrim.
+        tints = listOf(HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.40f else 0.46f))),
+        blurRadius = 26.dp,
+        noiseFactor = 0.05f,
+        fallbackTint = HazeTint(tint(style).copy(alpha = if (style == GlassStyle.DUSK) 0.80f else 0.84f)),
     )
 
     /** Sidebar sheet: a little denser than the bar so long lists stay readable. */

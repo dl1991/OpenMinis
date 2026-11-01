@@ -305,11 +305,14 @@ fun AppearanceScreen(
 
     val fontsModified = chatInputLevel != 0 || messageLevel != 0 || appBaseLevel != 0
 
-    val tilePurple = Color(0xFF5856D6)
-    val tileBlue = Color(0xFF007AFF)
-    val tileOrange = Color(0xFFFF9500)
-    val tileGreen = Color(0xFF34C759)
-    val tileTeal = Color(0xFF5AC8FA)
+    // [fork/mibot-v4] One muted tint for every row icon on Mibot screens.
+    val mibotUi = com.openminis.app.ui.theme.LocalMibotActive.current
+    val muted = com.openminis.app.mibot.design.MibotTokens.iconTint()
+    val tilePurple = if (mibotUi) muted else Color(0xFF5856D6)
+    val tileBlue = if (mibotUi) muted else Color(0xFF007AFF)
+    val tileOrange = if (mibotUi) muted else Color(0xFFFF9500)
+    val tileGreen = if (mibotUi) muted else Color(0xFF34C759)
+    val tileTeal = if (mibotUi) muted else Color(0xFF5AC8FA)
 
     SettingsScaffold(title = stringResource(R.string.appearance_title), onBack = onBack) {
 
@@ -338,11 +341,7 @@ fun AppearanceScreen(
                         onThemeChanged(idx)
                     },
                     leading = {
-                        androidx.compose.material3.Icon(
-                            row.icon,
-                            contentDescription = null,
-                            tint = row.tint,
-                        )
+                        AppearanceRowIcon(row.icon, row.tint)
                     },
                     showDivider = idx < themeRows.size - 1,
                 )
@@ -373,11 +372,7 @@ fun AppearanceScreen(
                         prefs.edit().putInt(KEY_LAUNCH_SESSION, idx).apply()
                     },
                     leading = {
-                        androidx.compose.material3.Icon(
-                            row.icon,
-                            contentDescription = null,
-                            tint = row.tint,
-                        )
+                        AppearanceRowIcon(row.icon, row.tint)
                     },
                     showDivider = idx < launchRows.size - 1,
                 )
@@ -407,17 +402,9 @@ fun AppearanceScreen(
                     },
                     leading = {
                         if (idx == 0) {
-                            androidx.compose.material3.Icon(
-                                Icons.AutoMirrored.Outlined.KeyboardReturn,
-                                contentDescription = null,
-                                tint = tilePurple,
-                            )
+                            AppearanceRowIcon(Icons.AutoMirrored.Outlined.KeyboardReturn, tilePurple)
                         } else {
-                            androidx.compose.material3.Icon(
-                                Icons.AutoMirrored.Outlined.Send,
-                                contentDescription = null,
-                                tint = tileGreen,
-                            )
+                            AppearanceRowIcon(Icons.AutoMirrored.Outlined.Send, tileGreen)
                         }
                     },
                     showDivider = idx < returnRows.size - 1,
@@ -904,5 +891,15 @@ private fun FontScaleSliderRow(
                 .height(0.5.dp)
                 .background(dividerColor),
         )
+    }
+}
+
+/** [fork/mibot-v4] Leading row icon: refined muted line glyph on Mibot screens. */
+@Composable
+private fun AppearanceRowIcon(icon: ImageVector, tint: Color) {
+    if (com.openminis.app.ui.theme.LocalMibotActive.current) {
+        com.openminis.app.mibot.design.IconChip(icon, tint)
+    } else {
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = tint)
     }
 }
